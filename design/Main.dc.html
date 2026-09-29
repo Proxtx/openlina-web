@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenLina: browse mods</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000;font-family:'Space Mono',monospace;color:#fff}
+a{color:#e2c35a}a:hover{color:#fff}
+button{font-family:'Pixelify Sans',sans-serif;cursor:pointer}
+input,textarea{font-family:'Space Mono',monospace}
+.ol-field{background-color:#212121;background-image:radial-gradient(circle at 12px 12px,#282828 3px,transparent 3.5px),radial-gradient(circle at 36px 36px,#262626 2px,transparent 2.5px);background-size:48px 48px}
+.ol-card:hover{transform:translateY(-2px)}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1480px; box-sizing: border-box; background: #000000; padding: 0 40px; display: flex; flex-direction: column; font-family: 'Space Mono', monospace;">
+
+<header style="height: 72px; display: flex; align-items: center; gap: 20px; flex-shrink: 0;">
+<div style="display: flex; gap: 14px; align-items: center;">
+<svg width="28" height="28" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="10" height="10" fill="#c9a94d"></rect><rect x="3" y="3" width="6" height="6" fill="#2b2412"></rect><rect x="4" y="4" width="4" height="4" fill="#c9a94d"></rect></svg>
+<svg width="28" height="28" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="3" width="8" height="3" fill="#c9524a"></rect><rect x="1" y="4" width="10" height="2" fill="#c9524a"></rect><rect x="3" y="6" width="6" height="2" fill="#e8b8a8"></rect><rect x="4" y="8" width="4" height="1" fill="#c9524a"></rect></svg>
+<svg width="28" height="28" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="1" width="6" height="2" fill="#b86a35"></rect><rect x="1" y="3" width="2" height="6" fill="#b86a35"></rect><rect x="9" y="3" width="2" height="6" fill="#b86a35"></rect><rect x="3" y="9" width="6" height="2" fill="#b86a35"></rect></svg>
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 24px; font-weight: 700; color: #a8a8a8; letter-spacing: 2px; margin-left: 10px;">OPENLINA</span>
+</div>
+<nav aria-label="Main" style="margin-left: auto; display: flex; gap: 28px; align-items: center; font-family: 'Pixelify Sans', sans-serif; font-size: 20px;">
+<a href="Main.dc.html" style="color: #ffffff; text-decoration: none;">BROWSE</a>
+<a href="Agents.dc.html" style="color: #a8a8a8; text-decoration: none;">FOR AGENTS</a>
+<a href="Export.dc.html" style="display: flex; align-items: center; gap: 10px; color: #e2c35a; text-decoration: none; border: 3px solid #e2c35a; padding: 6px 14px;">PACK <span style="background: #e2c35a; color: #000000; padding: 0 8px;">{{packCount}}</span></a>
+</nav>
+</header>
+
+<main class="ol-field" style="flex-grow: 1; display: flex; flex-direction: column; gap: 24px; padding: 36px 40px 40px; box-sizing: border-box;">
+
+<section style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 14px;">
+<h1 aria-label="OpenLina" style="margin: 0; display: flex; gap: 2px; font-family: 'Pixelify Sans', sans-serif; font-weight: 700; font-size: 88px; line-height: 1; color: #ffffff; text-shadow: 5px 5px 0 #000000;">
+<span style="display: inline-block; transform: rotate(-5deg) translateY(4px);">O</span>
+<span style="display: inline-block; transform: rotate(4deg);">P</span>
+<span style="display: inline-block; transform: rotate(-3deg) translateY(6px);">E</span>
+<span style="display: inline-block; transform: rotate(6deg) translateY(-2px);">N</span>
+<span style="display: inline-block; width: 22px;"></span>
+<span style="display: inline-block; transform: rotate(-4deg) translateY(3px);">L</span>
+<span style="display: inline-block; transform: rotate(3deg) translateY(-4px);">I</span>
+<span style="display: inline-block; transform: rotate(-6deg) translateY(5px);">N</span>
+<span style="display: inline-block; transform: rotate(5deg);">A</span>
+</h1>
+<p style="margin: 0; max-width: 620px; font-size: 17px; line-height: 1.6; color: #a8a8a8;">Mods for Mosa Lina, made by humans and their agents. Pick mods, add change requests, export a pack, then run <code style="color: #ffffff; background: #000000; padding: 2px 8px;">openlina install pack.zip</code>.</p>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-bottom: 8px;">
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 16px; color: #a8a8a8;">WORKS WITH STEAM BUILD</span>
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 26px; color: #ffffff; text-shadow: 3px 3px 0 #000000;">22056877</span>
+</div>
+</section>
+
+<nav aria-label="Sections" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+<button type="button" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: {{t.bg}}; color: {{t.fg}}; border: 4px solid {{t.color}}; box-shadow: 5px 5px 0 #000000; text-align: left;">
+<svg width="44" height="44" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" style="background: #161616; flex-shrink: 0;"><sc-for list="{{t.icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></svg>
+<span style="display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 24px; font-weight: 700; letter-spacing: 1px;">{{t.label}}</span>
+<span style="font-family: 'Space Mono', monospace; font-size: 13px; opacity: 0.85;">{{t.count}} mods</span>
+</span>
+</button>
+</sc-for>
+</nav>
+
+<div style="display: flex; gap: 32px; align-items: flex-start; flex-grow: 1;">
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 18px;">
+<div style="display: flex; align-items: center; gap: 14px;">
+<label for="ol-search" style="font-family: 'Pixelify Sans', sans-serif; font-size: 18px; color: #a8a8a8;">SEARCH</label>
+<input id="ol-search" type="search" placeholder="{{searchHint}}" style="flex-grow: 1; height: 44px; box-sizing: border-box; padding: 0 14px; background: #000000; color: #ffffff; border: 3px solid #424242; font-size: 15px;">
+<div role="group" aria-label="Sort" style="display: flex; gap: 0;">
+<button type="button" style="height: 44px; padding: 0 16px; background: #ffffff; color: #000000; border: 3px solid #ffffff; font-size: 17px;">TOP</button>
+<button type="button" style="height: 44px; padding: 0 16px; background: #000000; color: #a8a8a8; border: 3px solid #424242; font-size: 17px;">NEW</button>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px;">
+<sc-for list="{{mods}}" as="m" hint-placeholder-count="5">
+<article class="ol-card" style="display: flex; flex-direction: column; background: #1a1a1a; border: 4px solid #000000; box-shadow: 6px 6px 0 #000000;">
+<a href="ItemDetail.dc.html" aria-label="Open {{m.name}}" style="position: relative; display: block; height: 158px; overflow: hidden; border-bottom: 4px solid #000000;">
+<svg width="100%" height="158" viewBox="0 0 120 64" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true" style="display: block;">
+<rect x="0" y="0" width="120" height="64" fill="#212121"></rect>
+<rect x="6" y="44" width="14" height="14" fill="{{m.tileA}}"></rect>
+<rect x="20" y="50" width="22" height="8" fill="{{m.tileB}}"></rect>
+<rect x="42" y="46" width="8" height="12" fill="{{m.tileA}}"></rect>
+<rect x="82" y="40" width="12" height="18" fill="{{m.tileB}}"></rect>
+<rect x="94" y="48" width="20" height="10" fill="{{m.tileA}}"></rect>
+<rect x="100" y="14" width="8" height="8" fill="{{m.tileB}}"></rect>
+<g transform="translate(46 8) scale(2.4)"><sc-for list="{{m.icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></g>
+</svg>
+<span style="position: absolute; top: 10px; left: 10px; font-family: 'Pixelify Sans', sans-serif; font-size: 14px; background: #000000; color: #ffffff; padding: 2px 8px;">GIF · {{m.gifs}}</span>
+</a>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px;">
+<div style="display: flex; gap: 12px; align-items: center;">
+<svg width="44" height="44" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" style="background: #0d0d0d; border: 3px solid {{m.color}}; flex-shrink: 0;"><sc-for list="{{m.icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></svg>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; line-height: 1.1; color: #ffffff;">{{m.name}}</h2>
+<span style="font-size: 12px; color: #a8a8a8;">by {{m.author}}</span>
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #d0d0d0; min-height: 40px;">{{m.blurb}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+<sc-for list="{{m.stats}}" as="s">
+<span style="font-size: 12px; background: #000000; color: #ffffff; padding: 3px 8px; border: 2px solid #333333;">{{s}}</span>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+<div style="display: flex; align-items: center; gap: 4px;">
+<button type="button" onClick="{{m.up}}" aria-label="Vote {{m.name}} up" style="width: 36px; height: 36px; background: #000000; color: {{m.upColor}}; border: 2px solid #333333; font-size: 16px;">▲</button>
+<span style="min-width: 44px; text-align: center; font-family: 'Pixelify Sans', sans-serif; font-size: 18px;">{{m.score}}</span>
+<button type="button" onClick="{{m.down}}" aria-label="Vote {{m.name}} down" style="width: 36px; height: 36px; background: #000000; color: {{m.downColor}}; border: 2px solid #333333; font-size: 16px;">▼</button>
+</div>
+<button type="button" onClick="{{m.toggle}}" style="height: 40px; padding: 0 16px; background: {{m.addBg}}; color: {{m.addFg}}; border: 3px solid {{m.color}}; font-size: 18px; font-weight: 700;">{{m.addLabel}}</button>
+</div>
+</div>
+</article>
+</sc-for>
+<article style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 28px; border: 4px dashed #424242; text-align: center; min-height: 380px; box-sizing: border-box;">
+<svg width="60" height="60" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="1" width="2" height="10" fill="#a8a8a8"></rect><rect x="1" y="5" width="10" height="2" fill="#a8a8a8"></rect></svg>
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; color: #ffffff;">MADE A MOD?</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Your agent can upload it for you with <code style="color: #ffffff;">lina publish</code>. New uploads show as unreviewed until checked.</p>
+<a href="Agents.dc.html" style="font-family: 'Pixelify Sans', sans-serif; font-size: 18px;">HOW IT WORKS</a>
+</article>
+</div>
+</div>
+
+<aside aria-label="Your pack" style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; background: #000000; border: 4px solid #e2c35a; padding: 20px; box-sizing: border-box; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 28px; color: #e2c35a;">YOUR PACK</h2>
+<sc-if value="{{packEmpty}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Nothing yet. Add mods from any section.</p>
+</sc-if>
+<sc-for list="{{pack}}" as="it" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 2px solid #262626;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<svg width="32" height="32" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" style="background: #161616; border: 2px solid {{it.color}}; flex-shrink: 0;"><sc-for list="{{it.icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></svg>
+<div style="display: flex; flex-direction: column; flex-grow: 1;">
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 18px;">{{it.name}}</span>
+<span style="font-size: 11px; color: #a8a8a8;">{{it.section}}</span>
+</div>
+<button type="button" onClick="{{it.toggle}}" aria-label="Remove {{it.name}}" style="width: 32px; height: 32px; background: #000000; color: #a8a8a8; border: 2px solid #333333; font-size: 16px;">×</button>
+</div>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a8a8a8;">CHANGE REQUEST (OPTIONAL)
+<textarea rows="2" placeholder="{{it.hint}}" style="resize: vertical; background: #161616; color: #ffffff; border: 2px solid #333333; padding: 6px 8px; font-size: 12px;"></textarea>
+</label>
+</div>
+</sc-for>
+<a href="Export.dc.html" style="display: flex; justify-content: center; align-items: center; height: 52px; background: #e2c35a; color: #000000; text-decoration: none; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; font-weight: 700;">EXPORT PACK</a>
+<p style="margin: 0; font-size: 11px; line-height: 1.6; color: #a8a8a8;">ZIP for players (the openlina helper patches your own copy of the game), JSON for agents.</p>
+</aside>
+
+</div>
+</main>
+
+<footer style="height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif;">
+<span style="font-size: 14px; color: #555555;">Fan project. Not affiliated with the developers of Mosa Lina.</span>
+<span style="font-size: 22px; color: #555555; letter-spacing: 2px;">{{footerLabel}}</span>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1480}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { section: 'items', selected: { portal_gun: true, screen_wrap: true }, votes: {} };
+  }
+  renderVals() {
+    const PAL = { k:'#0d0d0d', w:'#ffffff', g:'#a8a8a8', d:'#5e6175', b:'#419ecd', o:'#e8883a', y:'#e2c35a', m:'#79617b', p:'#605675', s:'#4c5b6d', c:'#9fdcf5', r:'#c9524a', n:'#8a6a3a' };
+    const px = (rows) => { const out = []; rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (PAL[ch]) out.push({ x, y, c: PAL[ch] }); } }); return out; };
+    const ICON = {
+      portal_gun: ['.....oo.....','....o..o....','....o..o....','.....oo.....','............','.kkkkkkkkk..','.kgggggggbk.','.kgwwwgggbbk','.kkkkdgkkbk.','....kdk..k..','....kdk.....','....kkk.....'],
+      freeze_ray: ['............','..........c.','.........c.c','.kkkkkk...c.','.kssssskc...','.kscccsbcc..','.kssssskc...','.kkkkdk...c.','....kdk..c.c','....kdk...c.','....kkk.....','............'],
+      bubble_wand: ['.......bb...','......b..b..','......b..b..','.......bb.b.','.........b.b','......bb..b.','.....b..b...','.....b..b...','......bb....','...kk.......','..kyk.......','.kyk........'],
+      anvil_drop: ['............','............','..kkkkkkkk..','.kddddddddk.','kddddddddk..','.kkddddkk...','...kddk.....','..kddddk....','.kddddddk...','.kkkkkkkk...','............','............'],
+      clone_pad: ['............','..ww....ww..','.wkkw..wkkw.','.wkkw..wkkw.','..ww....ww..','...w....w...','..www..www..','..w.w..w.w..','............','.kmmmmmmmmk.','.kppppppppk.','.kkkkkkkkkk.'],
+      screen_wrap: ['.....oo.....','.....oo.....','...oooooo...','....oooo....','.....oo.....','.gggggggggg.','.g........g.','.gggggggggg.','.....oo.....','...oooooo...','....oooo....','.....oo.....'],
+      low_gravity: ['.....ww.....','....wwww....','...wwwwww...','.....ww.....','.....ww.....','............','....bbbb....','...bbbbbb...','...bbbbbb...','....bbbb....','............','..g.g.g.g...'],
+      mirror_world: ['............','.....gg.....','..yy.gg.yy..','.yyy.gg.yyy.','.yyyygg.yyyy','.yyy.gg.yyy.','..yy.gg.yy..','.....gg.....','.....gg.....','..mmmggmmm..','..mmmggmmm..','............'],
+      slippery: ['............','....w.......','...www......','....w....w..','........www.','.........w..','............','cccccccccccc','cwwcccccwwcc','cccccccccccc','ssssssssssss','............'],
+      tumble: ['....bbbb....','..bb....b...','.b.......b..','.b...kk...b.','b...kmmk..b.','b...kmmk..b.','.b...kk..bbb','.b........b.','..b.........','...bbbb.....','............','............'],
+      vertigo: ['....kkkk....','....kssk....','....kssk....','...kkkkkk...','...kmmmmk...','...kmmmmk...','..kkkkkkkk..','..kppppppk..','..kppppppk..','.kkkkkkkkkk.','.kssssssssk.','.kkkkkkkkkk.'],
+      pinball: ['............','.kkkkkkkkkk.','.k........k.','.k..bb....k.','.k..bb.oo.k.','.k.....oo.k.','.k.y......k.','.k..yy..yyk.','.k....yy..k.','.kkkk..kkkk.','............','............'],
+      dark_room: ['kkkkkkkkkkkk','kkkkkkkkkkkk','kkkkkyykkkkk','kkkkyyyykkkk','kkkyyyyyykkk','kkkkyyyykkkk','kkkkkyykkkkk','kkkkkkkkkkkk','kkkkkwwkkkkk','kkkkwkkwkkkk','kkkkkkkkkkkk','kkkkkkkkkkkk'],
+      mod_menu: ['............','.kkkkkkkkkk.','.kwwwwwwwwk.','.kkkkkkkkkk.','.kmm.mmmmmk.','.kkkkkkkkkk.','.kmm.mmmmk..','.kkkkkkkkkk.','.kmm.mmmmmk.','.kkkkkkkkkk.','............','............'],
+      speedrun: ['....kkkk....','.....kk.....','...kkkkkk...','..kwwwwwwk..','.kwwwwkwwwk.','.kwwwwkwwwk.','.kwwwwkkkwk.','.kwwwwwwwwk.','..kwwwwwwk..','...kkkkkk...','............','............'],
+      palette: ['............','..bbb..ooo..','.bbbbbooooo.','.bbbbbooooo.','..bbb..ooo..','............','..yyy..mmm..','.yyyyymmmmm.','.yyyyymmmmm.','..yyy..mmm..','............','............'],
+      photo: ['............','....kkk.....','.kkkkkkkkkk.','.kggggggggk.','.kggkkkkggk.','.kgkwbbkkgk.','.kgkbbbbkgk.','.kggkkkkggk.','.kggggggggk.','.kkkkkkkkkk.','............','............']
+    };
+    const SECTIONS = {
+      items: { label: 'ITEMS', color: '#e2c35a', tileA: '#605675', tileB: '#79617b', hint: 'e.g. 5 shots instead of 3' },
+      modifiers: { label: 'MODIFIERS', color: '#e8883a', tileA: '#4c5b6d', tileB: '#465f71', hint: 'e.g. only wrap top and bottom' },
+      levels: { label: 'LEVEL MODS', color: '#419ecd', tileA: '#5b4671', tileB: '#4c5b6d', hint: 'e.g. rotate every 15 s' },
+      general: { label: 'GENERAL', color: '#b58fb8', tileA: '#465771', tileB: '#605675', hint: 'e.g. open with F1' }
+    };
+    const MODS = [
+      { id: 'portal_gun', section: 'items', name: 'Portal Gun', author: 'openlina-kit', votes: 212, gifs: 3, blurb: 'Shoot a blue and an orange portal. Anything that enters one leaves the other, momentum kept.', stats: ['AMMO 2', 'AIM SHOOT', 'PORTALS 2'] },
+      { id: 'freeze_ray', section: 'items', name: 'Freeze Ray', author: 'sample-author', votes: 131, gifs: 2, blurb: 'Freezes the object you hit in place for a few seconds.', stats: ['AMMO 3', 'AIM LONG', 'FREEZE 4 S'] },
+      { id: 'bubble_wand', section: 'items', name: 'Bubble Wand', author: 'sample-author', votes: 88, gifs: 1, blurb: 'Blows a bubble that carries small objects upward until it pops.', stats: ['AMMO 4', 'AIM MID', 'LIFT 3 S'] },
+      { id: 'anvil_drop', section: 'items', name: 'Anvil Drop', author: 'sample-author', votes: 64, gifs: 2, blurb: 'Drops a very heavy anvil above the aim point.', stats: ['AMMO 1', 'AIM REMOTE', 'MASS 20×'] },
+      { id: 'clone_pad', section: 'items', name: 'Clone Pad', author: 'sample-author', votes: 41, gifs: 1, blurb: 'Place a pad; the next object that touches it is duplicated once.', stats: ['AMMO 1', 'AIM SHOOT', 'CLONES 1'] },
+      { id: 'screen_wrap', section: 'modifiers', name: 'Screen Wrap', author: 'openlina-kit', votes: 187, gifs: 2, blurb: 'Objects leaving the screen come back on the other side. Long levels wrap top and bottom only.', stats: ['MODIFIER', 'ROLLS LIKE THE OTHERS', 'FRUITS EXEMPT'] },
+      { id: 'low_gravity', section: 'modifiers', name: 'Low Gravity', author: 'sample-author', votes: 120, gifs: 1, blurb: 'Everything falls at a third of the usual speed.', stats: ['MODIFIER', 'GRAVITY ⅓'] },
+      { id: 'mirror_world', section: 'modifiers', name: 'Mirror World', author: 'sample-author', votes: 77, gifs: 1, blurb: 'The level is flipped left to right.', stats: ['MODIFIER', 'VISUAL + PHYSICS'] },
+      { id: 'slippery', section: 'modifiers', name: 'Slippery Floors', author: 'sample-author', votes: 52, gifs: 1, blurb: 'All tiles lose their friction.', stats: ['MODIFIER', 'FRICTION 0'] },
+      { id: 'tumble', section: 'levels', name: 'Tumble', author: 'openlina-kit', votes: 164, gifs: 3, blurb: 'Gravity turns 90° every 10 seconds and the camera turns with it.', stats: ['1 LEVEL', 'NOT EDITOR-MADE', 'ROTATES'] },
+      { id: 'vertigo', section: 'levels', name: 'Vertigo Tower', author: 'sample-author', votes: 98, gifs: 2, blurb: 'A level taller than the screen that scrolls upward.', stats: ['1 LEVEL', 'VERTICAL SCROLL'] },
+      { id: 'pinball', section: 'levels', name: 'Pinball Palace', author: 'sample-author', votes: 70, gifs: 1, blurb: 'Bumpers and flippers that throw fruits around.', stats: ['3 LEVELS', 'BOUNCERS'] },
+      { id: 'dark_room', section: 'levels', name: 'Dark Room', author: 'sample-author', votes: 45, gifs: 1, blurb: 'Only the area around Lina is lit.', stats: ['5 LEVELS', 'LIGHTING'] },
+      { id: 'mod_menu', section: 'general', name: 'Mod Menu', author: 'openlina-kit', votes: 150, gifs: 1, blurb: 'Adds an OPENLINA entry to the pause menu listing active mods and their options.', stats: ['PAUSE MENU', 'OPTIONS IN GAME'] },
+      { id: 'speedrun', section: 'general', name: 'Split Timer', author: 'sample-author', votes: 90, gifs: 1, blurb: 'Per-level splits with personal bests.', stats: ['HUD', 'SAVES PBS'] },
+      { id: 'palette', section: 'general', name: 'Colorblind Palettes', author: 'sample-author', votes: 83, gifs: 1, blurb: 'Swaps fruit and portal colors for high-contrast sets.', stats: ['ACCESSIBILITY', '3 PALETTES'] },
+      { id: 'photo', section: 'general', name: 'Photo Mode', author: 'sample-author', votes: 39, gifs: 1, blurb: 'Freeze the game and save a clean screenshot.', stats: ['SCREENSHOT', 'NO HUD'] }
+    ];
+    const TAB_ICON = { items: 'portal_gun', modifiers: 'screen_wrap', levels: 'tumble', general: 'mod_menu' };
+    const { section, selected, votes } = this.state;
+    const cur = SECTIONS[section];
+    const toggle = (id) => () => { const s = { ...this.state.selected }; if (s[id]) delete s[id]; else s[id] = true; this.setState({ selected: s }); };
+    const vote = (id, dir) => () => { const v = { ...this.state.votes }; v[id] = v[id] === dir ? 0 : dir; this.setState({ votes: v }); };
+    const tabs = Object.keys(SECTIONS).map((key) => {
+      const sec = SECTIONS[key];
+      const active = key === section;
+      return { label: sec.label, color: sec.color, count: MODS.filter((m) => m.section === key).length, icon: px(ICON[TAB_ICON[key]]), bg: active ? sec.color : '#000000', fg: active ? '#000000' : '#ffffff', pick: () => this.setState({ section: key }) };
+    });
+    const mods = MODS.filter((m) => m.section === section).map((m) => {
+      const v = votes[m.id] || 0;
+      const on = !!selected[m.id];
+      return { ...m, icon: px(ICON[m.id]), color: cur.color, tileA: cur.tileA, tileB: cur.tileB, score: m.votes + v, upColor: v === 1 ? cur.color : '#a8a8a8', downColor: v === -1 ? '#e8883a' : '#a8a8a8', up: vote(m.id, 1), down: vote(m.id, -1), toggle: toggle(m.id), addLabel: on ? 'ADDED' : 'ADD', addBg: on ? cur.color : '#000000', addFg: on ? '#000000' : '#ffffff' };
+    });
+    const pack = MODS.filter((m) => selected[m.id]).map((m) => ({ name: m.name, section: SECTIONS[m.section].label, color: SECTIONS[m.section].color, icon: px(ICON[m.id]), hint: SECTIONS[m.section].hint, toggle: toggle(m.id) }));
+    return { tabs, mods, pack, packCount: pack.length, packEmpty: pack.length === 0, searchHint: 'Search ' + cur.label.toLowerCase(), footerLabel: cur.label };
+  }
+}
+</script>
+</body>
+</html>

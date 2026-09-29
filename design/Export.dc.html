@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenLina: export pack</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000;font-family:'Space Mono',monospace;color:#fff}
+a{color:#e2c35a}a:hover{color:#fff}
+button{font-family:'Pixelify Sans',sans-serif;cursor:pointer}
+textarea{font-family:'Space Mono',monospace}
+.ol-field{background-color:#212121;background-image:radial-gradient(circle at 12px 12px,#282828 3px,transparent 3.5px),radial-gradient(circle at 36px 36px,#262626 2px,transparent 2.5px);background-size:48px 48px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1240px; box-sizing: border-box; background: #000000; padding: 0 40px; display: flex; flex-direction: column;">
+
+<header style="height: 72px; display: flex; align-items: center; gap: 20px; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif;">
+<a href="Main.dc.html" style="font-size: 24px; font-weight: 700; color: #a8a8a8; letter-spacing: 2px; text-decoration: none;">OPENLINA</a>
+<nav aria-label="Main" style="margin-left: auto; display: flex; gap: 28px; font-size: 20px;">
+<a href="Main.dc.html" style="color: #a8a8a8; text-decoration: none;">BROWSE</a>
+<a href="Agents.dc.html" style="color: #a8a8a8; text-decoration: none;">FOR AGENTS</a>
+<span style="color: #ffffff;">PACK</span>
+</nav>
+</header>
+
+<main class="ol-field" style="flex-grow: 1; display: flex; gap: 36px; padding: 36px 40px; box-sizing: border-box;">
+
+<section aria-label="Pack contents" style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0;">
+<h1 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 56px; line-height: 1; text-shadow: 5px 5px 0 #000000;">YOUR PACK</h1>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: #a8a8a8;">Change requests are optional. They travel with the export; an agent reads them and adapts the mods before installing.</p>
+
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 12px; background: #000000; border: 4px solid {{g.color}}; padding: 18px 20px; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 26px; color: {{g.color}};">{{g.label}}</h2>
+<sc-for list="{{g.mods}}" as="m">
+<div style="display: flex; gap: 16px; align-items: flex-start; padding: 12px 0; border-top: 2px solid #1f1f1f;">
+<svg width="56" height="56" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" style="background: #161616; border: 3px solid {{g.color}}; flex-shrink: 0;"><sc-for list="{{m.icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></svg>
+<div style="display: flex; flex-direction: column; gap: 4px; width: 220px; flex-shrink: 0;">
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 22px;">{{m.name}}</span>
+<span style="font-size: 12px; color: #a8a8a8;">{{m.id}}</span>
+</div>
+<label style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #a8a8a8;">CHANGE REQUEST FOR {{m.upper}}
+<textarea rows="2" style="resize: vertical; background: #161616; color: #ffffff; border: 2px solid #333333; padding: 8px; font-size: 13px;">{{m.request}}</textarea>
+</label>
+</div>
+</sc-for>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #a8a8a8; border-top: 2px solid #1f1f1f; padding-top: 12px;">CHANGE REQUEST FOR ALL {{g.label}}
+<textarea rows="2" placeholder="{{g.hint}}" style="resize: vertical; background: #161616; color: #ffffff; border: 2px solid #333333; padding: 8px; font-size: 13px;"></textarea>
+</label>
+</div>
+</sc-for>
+</section>
+
+<aside aria-label="Export" style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px;">
+<div role="group" aria-label="Format" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0;">
+<button type="button" onClick="{{pickZip}}" aria-pressed="{{zipPressed}}" style="height: 60px; background: {{zipBg}}; color: {{zipFg}}; border: 4px solid #e2c35a; font-size: 24px; font-weight: 700;">ZIP · PLAYERS</button>
+<button type="button" onClick="{{pickJson}}" aria-pressed="{{jsonPressed}}" style="height: 60px; background: {{jsonBg}}; color: {{jsonFg}}; border: 4px solid #e2c35a; font-size: 24px; font-weight: 700;">JSON · AGENTS</button>
+</div>
+
+<sc-if value="{{isZip}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 14px; background: #000000; padding: 20px; border: 4px solid #000000;">
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 20px; color: #a8a8a8;">INSIDE THE ZIP</span>
+<pre style="margin: 0; font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.7; color: #ffffff; white-space: pre;">openlina-pack/
+  openlina            helper (linux, windows)
+  modpack.toml        mods, options, requests
+  mods/
+    core/             openlina core 0.1
+    portal_gun/       mod.toml, patch.wasm, assets/
+    screen_wrap/      mod.toml, patch.wasm, assets/</pre>
+<span style="font-size: 12px; line-height: 1.6; color: #a8a8a8;">No game files inside. The helper patches your own copy of Mosa Lina and never changes the install.</span>
+</div>
+<ol style="margin: 0; padding: 0 0 0 22px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.6;">
+<li>Unzip anywhere, then run <code style="background: #000000; padding: 2px 6px;">./openlina install</code></li>
+<li>Steam › Mosa Lina › Properties › Launch options: paste the line it prints.</li>
+<li>Play. Remove the launch option to go back to vanilla.</li>
+</ol>
+<a href="Export.dc.html" style="display: flex; justify-content: center; align-items: center; height: 60px; background: #e2c35a; color: #000000; text-decoration: none; font-family: 'Pixelify Sans', sans-serif; font-size: 26px; font-weight: 700;">DOWNLOAD ZIP</a>
+</sc-if>
+
+<sc-if value="{{isJson}}" hint-placeholder-val="{{false}}">
+<pre style="margin: 0; background: #000000; padding: 18px 20px; font-family: 'Space Mono', monospace; font-size: 12.5px; line-height: 1.6; color: #e6e6e6; white-space: pre; overflow: hidden;">{
+  "openlina": 1,
+  "game_build": "22056877",
+  "mods": [
+    { "id": "items/portal_gun", "version": "0.1.0",
+      "url": "https://openlina.example/api/mods/items/portal_gun/0.1.0",
+      "request": "3 shots instead of 2" },
+    { "id": "modifiers/screen_wrap", "version": "0.2.0",
+      "url": "https://openlina.example/api/mods/modifiers/screen_wrap/0.2.0",
+      "request": null }
+  ],
+  "section_requests": { "items": null, "modifiers": null }
+}</pre>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Give this to your agent, or share the link: <code style="color: #ffffff;">lina pull &lt;pack link&gt;</code> downloads the mods, applies the requests, tests and installs.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<a href="Export.dc.html" style="display: flex; justify-content: center; align-items: center; height: 56px; background: #e2c35a; color: #000000; text-decoration: none; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; font-weight: 700;">COPY JSON</a>
+<a href="Export.dc.html" style="display: flex; justify-content: center; align-items: center; height: 56px; background: #000000; color: #e2c35a; border: 4px solid #e2c35a; text-decoration: none; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; font-weight: 700;">COPY LINK</a>
+</div>
+</sc-if>
+</aside>
+
+</main>
+<footer style="height: 56px; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; color: #555555; letter-spacing: 2px;">EXPORT</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { format: 'zip' };
+  }
+  renderVals() {
+    const PAL = { k:'#0d0d0d', w:'#ffffff', g:'#a8a8a8', d:'#5e6175', b:'#419ecd', o:'#e8883a' };
+    const px = (rows) => { const out = []; rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (PAL[ch]) out.push({ x, y, c: PAL[ch] }); } }); return out; };
+    const groups = [
+      { label: 'ITEMS', color: '#e2c35a', hint: 'e.g. make every item a little stronger', mods: [
+        { name: 'Portal Gun', upper: 'PORTAL GUN', id: 'items/portal_gun@0.1.0', request: '3 shots instead of 2', icon: px(['.....oo.....','....o..o....','....o..o....','.....oo.....','............','.kkkkkkkkk..','.kgggggggbk.','.kgwwwgggbbk','.kkkkdgkkbk.','....kdk..k..','....kdk.....','....kkk.....']) }
+      ] },
+      { label: 'MODIFIERS', color: '#e8883a', hint: 'e.g. roll these modifiers twice as often', mods: [
+        { name: 'Screen Wrap', upper: 'SCREEN WRAP', id: 'modifiers/screen_wrap@0.2.0', request: '', icon: px(['.....oo.....','.....oo.....','...oooooo...','....oooo....','.....oo.....','.gggggggggg.','.g........g.','.gggggggggg.','.....oo.....','...oooooo...','....oooo....','.....oo.....']) }
+      ] }
+    ];
+    const zip = this.state.format === 'zip';
+    return {
+      groups,
+      isZip: zip, isJson: !zip,
+      zipPressed: zip ? 'true' : 'false', jsonPressed: zip ? 'false' : 'true',
+      zipBg: zip ? '#e2c35a' : '#000000', zipFg: zip ? '#000000' : '#e2c35a',
+      jsonBg: zip ? '#000000' : '#e2c35a', jsonFg: zip ? '#e2c35a' : '#000000',
+      pickZip: () => this.setState({ format: 'zip' }),
+      pickJson: () => this.setState({ format: 'json' })
+    };
+  }
+}
+</script>
+</body>
+</html>

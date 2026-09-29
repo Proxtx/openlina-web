@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenLina: Portal Gun</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000;font-family:'Space Mono',monospace;color:#fff}
+a{color:#e2c35a}a:hover{color:#fff}
+button{font-family:'Pixelify Sans',sans-serif;cursor:pointer}
+textarea{font-family:'Space Mono',monospace}
+.ol-field{background-color:#212121;background-image:radial-gradient(circle at 12px 12px,#282828 3px,transparent 3.5px),radial-gradient(circle at 36px 36px,#262626 2px,transparent 2.5px);background-size:48px 48px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1300px; box-sizing: border-box; background: #000000; padding: 0 40px; display: flex; flex-direction: column;">
+
+<header style="height: 72px; display: flex; align-items: center; gap: 20px; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif;">
+<a href="Main.dc.html" style="font-size: 24px; font-weight: 700; color: #a8a8a8; letter-spacing: 2px; text-decoration: none;">OPENLINA</a>
+<span style="font-size: 20px; color: #555555;">/</span>
+<a href="Main.dc.html" style="font-size: 20px; color: #e2c35a; text-decoration: none;">ITEMS</a>
+<span style="font-size: 20px; color: #555555;">/</span>
+<span style="font-size: 20px; color: #ffffff;">PORTAL GUN</span>
+<a href="Export.dc.html" style="margin-left: auto; display: flex; align-items: center; gap: 10px; color: #e2c35a; text-decoration: none; border: 3px solid #e2c35a; padding: 6px 14px; font-size: 20px;">PACK <span style="background: #e2c35a; color: #000000; padding: 0 8px;">2</span></a>
+</header>
+
+<main class="ol-field" style="flex-grow: 1; display: flex; gap: 36px; padding: 36px 40px; box-sizing: border-box;">
+
+<section aria-label="Showcase" style="flex-grow: 1; display: flex; flex-direction: column; gap: 18px; min-width: 0;">
+<div style="position: relative; border: 6px solid #000000; box-shadow: 8px 8px 0 #000000;">
+<svg width="100%" viewBox="0 0 150 84" shape-rendering="crispEdges" role="img" aria-label="{{cur.alt}}" style="display: block;">
+<rect x="0" y="0" width="150" height="84" fill="#212121"></rect>
+<rect x="0" y="0" width="150" height="6" fill="#000000"></rect>
+<rect x="0" y="78" width="150" height="6" fill="#000000"></rect>
+<rect x="0" y="0" width="6" height="84" fill="#000000"></rect>
+<rect x="144" y="0" width="6" height="84" fill="#000000"></rect>
+<rect x="6" y="64" width="26" height="14" fill="#605675"></rect>
+<rect x="32" y="68" width="30" height="10" fill="#79617b"></rect>
+<rect x="62" y="64" width="14" height="14" fill="#4c5b6d"></rect>
+<rect x="14" y="22" width="8" height="42" fill="#5b4671"></rect>
+<rect x="100" y="60" width="44" height="18" fill="#465f71"></rect>
+<rect x="118" y="6" width="26" height="10" fill="#79617b"></rect>
+<rect x="84" y="34" width="12" height="6" fill="#605675"></rect>
+<rect x="22" y="36" width="3" height="16" fill="#419ecd"></rect>
+<rect x="23" y="38" width="2" height="12" fill="#9fdcf5"></rect>
+<rect x="122" y="16" width="14" height="3" fill="#e8883a"></rect>
+<rect x="124" y="16" width="10" height="2" fill="#f6c28f"></rect>
+<g transform="translate(40 52)"><sc-for list="{{lina}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></g>
+<rect x="50" y="57" width="6" height="2" fill="#a8a8a8"></rect>
+<sc-for list="{{cur.trail}}" as="t"><rect x="{{t.x}}" y="{{t.y}}" width="1" height="1" fill="#a8a8a8"></rect></sc-for>
+<rect x="{{cur.bx}}" y="{{cur.by}}" width="7" height="7" fill="#8a6a3a"></rect>
+<rect x="{{cur.bix}}" y="{{cur.biy}}" width="5" height="5" fill="#b58a4a"></rect>
+<rect x="110" y="50" width="6" height="6" fill="#419ecd"></rect>
+<rect x="112" y="48" width="2" height="2" fill="#6fb35a"></rect>
+</svg>
+<span style="position: absolute; top: 14px; left: 14px; font-family: 'Pixelify Sans', sans-serif; font-size: 16px; background: #000000; color: #ffffff; padding: 4px 10px;">GIF {{cur.n}} / 3 · {{cur.title}}</span>
+</div>
+<div role="tablist" aria-label="Showcase gifs" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+<sc-for list="{{frames}}" as="f" hint-placeholder-count="3">
+<button type="button" role="tab" aria-selected="{{f.active}}" onClick="{{f.pick}}" style="display: flex; flex-direction: column; gap: 8px; padding: 8px; background: #000000; border: 4px solid {{f.border}}; color: #ffffff; text-align: left;">
+<svg width="100%" viewBox="0 0 150 84" shape-rendering="crispEdges" aria-hidden="true" style="display: block;">
+<rect x="0" y="0" width="150" height="84" fill="#212121"></rect>
+<rect x="6" y="64" width="56" height="14" fill="#605675"></rect>
+<rect x="14" y="22" width="8" height="42" fill="#5b4671"></rect>
+<rect x="100" y="60" width="44" height="18" fill="#465f71"></rect>
+<rect x="22" y="36" width="3" height="16" fill="#419ecd"></rect>
+<rect x="122" y="16" width="14" height="3" fill="#e8883a"></rect>
+<rect x="{{f.bx}}" y="{{f.by}}" width="7" height="7" fill="#8a6a3a"></rect>
+</svg>
+<span style="font-size: 16px;">{{f.title}}</span>
+</button>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Showcase gifs are recorded by the game itself from a scripted replay (<code style="color: #ffffff;">lina gif</code>), so they match what the mod really does.</p>
+</section>
+
+<aside style="width: 420px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px;">
+<div style="display: flex; gap: 18px; align-items: center;">
+<svg width="96" height="96" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" style="background: #0d0d0d; border: 4px solid #e2c35a; box-shadow: 5px 5px 0 #000000; flex-shrink: 0;"><sc-for list="{{icon}}" as="p"><rect x="{{p.x}}" y="{{p.y}}" width="1" height="1" fill="{{p.c}}"></rect></sc-for></svg>
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<h1 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 44px; line-height: 1; text-shadow: 4px 4px 0 #000000;">PORTAL GUN</h1>
+<span style="font-size: 13px; color: #a8a8a8;">by openlina-kit · v0.1.0</span>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+<span style="font-size: 12px; background: #e2c35a; color: #000000; padding: 2px 8px;">ITEM</span>
+<span style="font-size: 12px; border: 2px solid #e8883a; color: #e8883a; padding: 0 8px;">UNREVIEWED</span>
+</div>
+</div>
+</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #e6e6e6;">Shoot a blue and an orange portal onto any surface. Objects, fruits and Lina herself go in one and come out of the other, keeping their momentum.</p>
+
+<table style="border-collapse: collapse; font-size: 14px; background: #000000; border: 4px solid #000000;">
+<caption style="text-align: left; font-family: 'Pixelify Sans', sans-serif; font-size: 18px; color: #a8a8a8; padding-bottom: 8px;">STATS</caption>
+<tbody>
+<sc-for list="{{stats}}" as="s">
+<tr style="border-bottom: 2px solid #1f1f1f;">
+<th scope="row" style="text-align: left; font-weight: 400; color: #a8a8a8; padding: 9px 12px;">{{s.k}}</th>
+<td style="text-align: right; padding: 9px 12px; font-family: 'Pixelify Sans', sans-serif; font-size: 18px;">{{s.v}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+
+<div style="display: flex; align-items: center; gap: 12px;">
+<div style="display: flex; align-items: center; gap: 4px;">
+<button type="button" onClick="{{up}}" aria-label="Vote up" style="width: 44px; height: 44px; background: #000000; color: {{upColor}}; border: 3px solid #333333; font-size: 18px;">▲</button>
+<span style="min-width: 54px; text-align: center; font-family: 'Pixelify Sans', sans-serif; font-size: 24px;">{{score}}</span>
+<button type="button" onClick="{{down}}" aria-label="Vote down" style="width: 44px; height: 44px; background: #000000; color: {{downColor}}; border: 3px solid #333333; font-size: 18px;">▼</button>
+</div>
+<button type="button" onClick="{{toggle}}" style="flex-grow: 1; height: 52px; background: {{addBg}}; color: {{addFg}}; border: 4px solid #e2c35a; font-size: 22px; font-weight: 700;">{{addLabel}}</button>
+</div>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-family: 'Pixelify Sans', sans-serif; font-size: 18px; color: #a8a8a8;">REQUEST A CHANGE
+<textarea rows="3" placeholder="e.g. 3 shots instead of 2, and portals only on purple tiles" style="resize: vertical; background: #000000; color: #ffffff; border: 3px solid #424242; padding: 10px; font-size: 13px;"></textarea>
+<span style="font-family: 'Space Mono', monospace; font-size: 12px; color: #a8a8a8;">Goes into your pack. Your agent applies it when it installs the pack.</span>
+</label>
+
+<div style="display: flex; flex-direction: column; gap: 6px; background: #000000; padding: 14px 16px; font-size: 13px;">
+<span style="font-family: 'Pixelify Sans', sans-serif; font-size: 18px; color: #a8a8a8;">PACKAGE</span>
+<span>mod.toml · patch.wasm · assets/ (3 sprites) · media/ (3 gifs)</span>
+<span style="color: #a8a8a8;">id <code style="color: #ffffff;">items/portal_gun@0.1.0</code> · needs core ≥ 0.1</span>
+</div>
+</aside>
+
+</main>
+<footer style="height: 56px; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; color: #555555; letter-spacing: 2px;">PORTAL GUN</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { frame: 0, added: true, vote: 0 };
+  }
+  renderVals() {
+    const PAL = { k:'#0d0d0d', w:'#ffffff', g:'#a8a8a8', d:'#5e6175', b:'#419ecd', o:'#e8883a', y:'#e2c35a', n:'#8a6a3a' };
+    const px = (rows) => { const out = []; rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (PAL[ch]) out.push({ x, y, c: PAL[ch] }); } }); return out; };
+    const icon = px(['.....oo.....','....o..o....','....o..o....','.....oo.....','............','.kkkkkkkkk..','.kgggggggbk.','.kgwwwgggbbk','.kkkkdgkkbk.','....kdk..k..','....kdk.....','....kkk.....']);
+    const lina = px(['...kkkk...','..kggggk..','.kgkkkkgk.','.kkwkwkwk.','.kgkkkkgk.','..kggggk..','...kwwkn..','..kwwwwknn','..kwwwwk..','...kwwk...','...kwkwk..','..kwk.kwk.']);
+    const FRAMES = [
+      { title: 'THROUGH THE WALL', bx: 26, by: 40, alt: 'A box enters the blue portal on the left wall.', trail: [[34,44],[38,46],[42,48],[46,50]] },
+      { title: 'OUT THE CEILING', bx: 126, by: 21, alt: 'The box comes out of the orange portal in the ceiling.', trail: [[129,30],[129,34]] },
+      { title: 'FRUIT RESCUE', bx: 104, by: 44, alt: 'The box lands next to a blue fruit.', trail: [[114,26],[110,32],[106,38]] }
+    ];
+    const { frame, added, vote } = this.state;
+    const f = FRAMES[frame];
+    const cur = { ...f, n: frame + 1, bix: f.bx + 1, biy: f.by + 1, trail: f.trail.map(([x, y]) => ({ x, y })) };
+    const frames = FRAMES.map((fr, i) => ({ ...fr, active: i === frame ? 'true' : 'false', border: i === frame ? '#e2c35a' : '#262626', pick: () => this.setState({ frame: i }) }));
+    const stats = [
+      { k: 'Ammo', v: '2' },
+      { k: 'Aim', v: 'SHOOT' },
+      { k: 'Portals at once', v: '2' },
+      { k: 'Keeps momentum', v: 'YES' },
+      { k: 'Works on', v: 'ALL SOLID TILES' },
+      { k: 'Game build', v: '22056877' }
+    ];
+    return {
+      icon, lina, cur, frames, stats,
+      score: 212 + vote,
+      upColor: vote === 1 ? '#e2c35a' : '#a8a8a8',
+      downColor: vote === -1 ? '#e8883a' : '#a8a8a8',
+      up: () => this.setState({ vote: vote === 1 ? 0 : 1 }),
+      down: () => this.setState({ vote: vote === -1 ? 0 : -1 }),
+      toggle: () => this.setState({ added: !added }),
+      addLabel: added ? 'IN YOUR PACK' : 'ADD TO PACK',
+      addBg: added ? '#e2c35a' : '#000000',
+      addFg: added ? '#000000' : '#ffffff'
+    };
+  }
+}
+</script>
+</body>
+</html>

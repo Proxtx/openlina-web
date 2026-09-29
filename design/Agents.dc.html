@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenLina: for agents</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000;font-family:'Space Mono',monospace;color:#fff}
+a{color:#e2c35a}a:hover{color:#fff}
+button{font-family:'Pixelify Sans',sans-serif;cursor:pointer}
+.ol-field{background-color:#212121;background-image:radial-gradient(circle at 12px 12px,#282828 3px,transparent 3.5px),radial-gradient(circle at 36px 36px,#262626 2px,transparent 2.5px);background-size:48px 48px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; background: #000000; padding: 0 40px; display: flex; flex-direction: column;">
+
+<header style="height: 72px; display: flex; align-items: center; gap: 20px; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif;">
+<a href="Main.dc.html" style="font-size: 24px; font-weight: 700; color: #a8a8a8; letter-spacing: 2px; text-decoration: none;">OPENLINA</a>
+<nav aria-label="Main" style="margin-left: auto; display: flex; gap: 28px; font-size: 20px;">
+<a href="Main.dc.html" style="color: #a8a8a8; text-decoration: none;">BROWSE</a>
+<span style="color: #ffffff;">FOR AGENTS</span>
+<a href="Export.dc.html" style="color: #a8a8a8; text-decoration: none;">PACK</a>
+</nav>
+</header>
+
+<main class="ol-field" style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; padding: 36px 40px; box-sizing: border-box; align-content: start;">
+
+<section style="grid-column: 1 / 3; display: flex; flex-direction: column; gap: 12px;">
+<h1 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 56px; line-height: 1; text-shadow: 5px 5px 0 #000000;">FOR AGENTS</h1>
+<p style="margin: 0; max-width: 900px; font-size: 15px; line-height: 1.7; color: #a8a8a8;">Agents build mods with <strong style="color: #ffffff;">openlina-kit</strong>: a skill, docs and the <code style="color: #ffffff;">lina</code> CLI. They pull packs from here, apply your change requests, test in the real game, record showcase gifs, and upload after asking you.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px; background: #000000; border: 4px solid #e2c35a; padding: 22px; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 28px; color: #e2c35a;">1 · GET THE KIT</h2>
+<pre style="margin: 0; font-size: 13px; line-height: 1.7; color: #ffffff; white-space: pre;">git clone …/openlina-kit
+cd openlina-kit
+nix develop          # rust, wasm target, xvfb
+lina setup           # reads your local game</pre>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Claude Code picks up the <code style="color: #ffffff;">openlina-modding</code> skill from the repo.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px; background: #000000; border: 4px solid #e8883a; padding: 22px; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 28px; color: #e8883a;">2 · UPLOAD TOKEN</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #a8a8a8;">Your agent uploads in your name with this token. It asks you before every upload. You can revoke the token any time.</p>
+<div style="display: flex; gap: 10px; align-items: center;">
+<code style="flex-grow: 1; background: #161616; border: 2px solid #333333; padding: 12px; font-size: 13px; color: #ffffff;">olt_••••••••••••••••••••3f9a</code>
+<button type="button" style="height: 46px; padding: 0 16px; background: #e8883a; color: #000000; border: 0; font-size: 18px; font-weight: 700;">NEW TOKEN</button>
+</div>
+<pre style="margin: 0; font-size: 13px; color: #ffffff;">lina login olt_…</pre>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px; background: #000000; border: 4px solid #419ecd; padding: 22px; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 28px; color: #419ecd;">3 · API</h2>
+<table style="border-collapse: collapse; font-size: 13px;">
+<tbody>
+<sc-for list="{{endpoints}}" as="e">
+<tr style="border-bottom: 2px solid #1f1f1f;">
+<td style="padding: 8px 10px 8px 0; color: #419ecd; font-weight: 700; white-space: nowrap;">{{e.method}}</td>
+<td style="padding: 8px 10px; white-space: nowrap;"><code>{{e.path}}</code></td>
+<td style="padding: 8px 0 8px 10px; color: #a8a8a8;">{{e.what}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+<p style="margin: 0; font-size: 12px; color: #a8a8a8;">OpenAPI spec at <code style="color: #ffffff;">/api/openapi.json</code>. Voting is one vote per mod per network (salted IP hash, no raw IPs stored).</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px; background: #000000; border: 4px solid #b58fb8; padding: 22px; box-shadow: 6px 6px 0 #000000;">
+<h2 style="margin: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 28px; color: #b58fb8;">4 · YOUR UPLOADS</h2>
+<sc-for list="{{uploads}}" as="u">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 2px solid #1f1f1f;">
+<span style="flex-grow: 1; font-family: 'Pixelify Sans', sans-serif; font-size: 20px;">{{u.name}}</span>
+<span style="font-size: 12px; color: #a8a8a8;">{{u.version}}</span>
+<span style="font-size: 12px; padding: 2px 8px; border: 2px solid {{u.color}}; color: {{u.color}};">{{u.status}}</span>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 12px; line-height: 1.6; color: #a8a8a8;">Mods are code that runs in your game. New uploads stay marked UNREVIEWED until a maintainer checks them.</p>
+</section>
+
+</main>
+<footer style="height: 56px; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; font-family: 'Pixelify Sans', sans-serif; font-size: 22px; color: #555555; letter-spacing: 2px;">FOR AGENTS</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      endpoints: [
+        { method: 'GET', path: '/api/mods?section=items', what: 'list mods' },
+        { method: 'GET', path: '/api/mods/{section}/{id}', what: 'details, versions, stats' },
+        { method: 'GET', path: '/api/packs/{pack}', what: 'an exported pack as JSON' },
+        { method: 'GET', path: '/api/mods/{id}/{ver}/package', what: 'download the package' },
+        { method: 'POST', path: '/api/mods', what: 'upload (token)' },
+        { method: 'POST', path: '/api/mods/{id}/vote', what: 'vote up or down' }
+      ],
+      uploads: [
+        { name: 'Portal Gun', version: '0.1.0', status: 'UNREVIEWED', color: '#e8883a' },
+        { name: 'Screen Wrap', version: '0.2.0', status: 'REVIEWED', color: '#6fb35a' },
+        { name: 'Mod Menu', version: '0.1.0', status: 'DRAFT', color: '#a8a8a8' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
