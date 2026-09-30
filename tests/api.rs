@@ -207,9 +207,15 @@ async fn packs_resolve_requirements_and_export_zips() {
     t.upload(&t.admin, package("wrap", "0.1.0", "modifiers", "requires = [\"core\"]\nconflicts = [\"edges\"]")).await;
     t.upload(&t.admin, package("edges", "0.1.0", "modifiers", "requires = [\"core\"]")).await;
 
+    // A conflict doesn't block the pack; it is listed for an agent to resolve.
     let (s, v) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "wrap" }, { "id": "edges" }] }))).await;
-    assert_eq!(s, StatusCode::BAD_REQUEST);
-    assert!(v["error"].as_str().unwrap().contains("conflicts"), "{v}");
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    assert_eq!(v["conflicts"], json!([["edges", "wrap"]]));
+    let (_, zip) = t.call(get(&format!("/api/packs/{}/zip", v["id"].as_str().unwrap()))).await;
+    let mut readme = String::new();
+    let mut z = zip::ZipArchive::new(std::io::Cursor::new(zip)).unwrap();
+    std::io::Read::read_to_string(&mut z.by_name("openlina-pack/README.txt").unwrap(), &mut readme).unwrap();
+    assert!(readme.contains("can't be installed yet: edges conflicts with wrap"), "{readme}");
     let (s, _) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "zap", "options": { "nope": 1 } }] }))).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
     let (s, _) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "zap" }], "section_requests": { "bogus": "x" } }))).await;

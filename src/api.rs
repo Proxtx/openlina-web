@@ -501,6 +501,10 @@ pub struct PackOut {
     pub created: i64,
     pub mods: Vec<PackModOut>,
     pub section_requests: BTreeMap<String, String>,
+    /// Pairs of mods in the pack that declare a conflict. Players can't install such a pack;
+    /// an agent resolves it (`lina pull` lists it as a task).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conflicts: Vec<[String; 2]>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -564,9 +568,15 @@ async fn create_pack(State(app): State<Shared>, Json(input): Json<PackIn>) -> Ap
         m.required_by.sort();
         m.required_by.dedup();
     }
+    // Conflicts don't block the pack: making the mods work together is a job for an agent.
+    let mut conflicts: Vec<[String; 2]> = Vec::new();
     for m in manifests.values() {
-        if let Some(c) = m.info.conflicts.iter().find(|c| manifests.contains_key(*c)) {
-            return Err(bad(format!("`{}` conflicts with `{c}`; remove one of them", m.info.id)));
+        for c in m.info.conflicts.iter().filter(|c| manifests.contains_key(*c)) {
+            let mut pair = [m.info.id.clone(), c.clone()];
+            pair.sort();
+            if !conflicts.contains(&pair) {
+                conflicts.push(pair);
+            }
         }
     }
     let mut section_requests = BTreeMap::new();
@@ -587,10 +597,16 @@ async fn create_pack(State(app): State<Shared>, Json(input): Json<PackIn>) -> Ap
         created: db::now(),
         mods: out,
         section_requests,
+        conflicts,
         id,
     };
     app.db.insert_pack(&pack.id, &serde_json::to_string(&pack)?)?;
     Ok((StatusCode::CREATED, Json(pack)))
+}
+
+/// "a conflicts with b, c conflicts with d".
+fn conflict_list(conflicts: &[[String; 2]]) -> String {
+    conflicts.iter().map(|[a, b]| format!("{a} conflicts with {b}")).collect::<Vec<_>>().join(", ")
 }
 
 /// Resolves the mods of a new pack: versions, options, requirements.
@@ -679,7 +695,12 @@ async fn pack_zip(State(app): State<Shared>, Path(id): Path<String>) -> ApiResul
         "OpenLina pack {id} for Mosa Lina (Steam build {build})\n\n{run}\n\nIt prints a Steam launch option (Mosa Lina > Properties > Launch Options).\nClear it to play vanilla again. No game files are in this zip: the helper patches\nyour own copy of the game when it starts and never changes the install.\n\nMods:\n{mods}\n{req}Pack: {url}\n",
         build = pack.game_build,
         mods = pack.mods.iter().map(|m| format!("  {} {} ({})\n", m.id, m.version, m.status)).collect::<String>(),
-        req = if requests.is_empty() && pack.section_requests.is_empty() {
+        req = if !pack.conflicts.is_empty() {
+            format!(
+                "This pack can't be installed yet: {}. Give it to an agent with openlina-kit to\nmake them work together:\n    lina pull <pack url>\n\n",
+                conflict_list(&pack.conflicts)
+            )
+        } else if requests.is_empty() && pack.section_requests.is_empty() {
             String::new()
         } else {
             "This pack has change requests (see modpack.toml). Give it to an agent with openlina-kit:\n    lina pull <pack url>\n\n".into()

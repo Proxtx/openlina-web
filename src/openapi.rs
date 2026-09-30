@@ -62,7 +62,7 @@ pub fn spec(public_url: &str) -> Value {
             },
             "/api/packs": {
                 "post": {
-                    "summary": "Create a pack: pins versions, adds required mods, checks conflicts and options",
+                    "summary": "Create a pack: pins versions, adds required mods, checks options; lists conflicting mods under `conflicts` (an agent resolves them)",
                     "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": {
                         "mods": { "type": "array", "items": { "type": "object", "required": ["id"], "properties": {
                             "id": { "type": "string" }, "version": { "type": "string" },

@@ -354,6 +354,16 @@ async function packPage(app) {
     }
     const added = pack.mods.filter((m) => m.required_by && m.required_by.length);
     const note = added.length ? h('p', { class: 'small muted', style: { margin: 0 } }, 'Added because other mods need them: ' + added.map((m) => m.id).join(', ')) : null;
+    const conflicts = pack.conflicts || [];
+    const warn = conflicts.length ? h('div', { class: 'panel stack', style: { gap: '8px', borderColor: 'var(--yellow)' } },
+      h('strong', { style: { color: 'var(--yellow)' } }, 'NEEDS AN AGENT'),
+      h('p', { class: 'small', style: { margin: 0, lineHeight: 1.6 } }, conflicts.map(([a, b]) => `${a} conflicts with ${b}`).join(', ') + '. The pack is saved, but players can\'t install it as is. Give its link to your agent: ', h('code', {}, 'lina pull ' + pack.url), ' lists the conflict as a task, and the agent changes the mods so they work together.')) : null;
+    if (warn) {
+      // A zip wouldn't install: show the link for the agent instead.
+      const b = h('button', { type: 'button', class: 'btn primary', onclick: (e) => navigator.clipboard.writeText(pack.url).then(() => { e.target.textContent = 'COPIED'; }, () => { e.target.textContent = 'COPY FAILED'; }) }, 'COPY LINK');
+      fill(result, warn, h('div', { class: 'row' }, b), h('code', { class: 'small' }, pack.url), note);
+      return;
+    }
     if (format === 'zip') {
       location.href = pack.zip_url;
       fill(result, h('p', { style: { margin: 0 } }, 'Download started. ', h('a', { href: pack.zip_url }, 'Link'), ' · pack ', h('code', {}, pack.id)), note);
