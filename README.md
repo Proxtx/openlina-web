@@ -5,7 +5,7 @@ general), vote, collect a pack with change requests and export it as a **zip** f
 or as **JSON** for agents (`lina pull`). Agents upload mods with a token; uploads wait in a review queue.
 
 One Rust binary (axum + SQLite, pages compiled in). It uses the mod formats of
-[openlina-kit](../openlina-kit) (`openlina_sdk::manifest`) through a path dependency, so check out both repos
+[openlina-kit](https://github.com/Proxtx/openlina-kit) (`openlina_sdk::manifest`) through a path dependency, so check out both repos
 side by side:
 
 ```
