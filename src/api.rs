@@ -507,6 +507,9 @@ pub struct PackModOut {
     pub version: String,
     pub status: String,
     pub package: String,
+    /// sha256 of the package zip.
+    #[serde(default)]
+    pub sha256: String,
     pub options: toml::Table,
     pub request: Option<String>,
     /// Added because these mods require it.
@@ -623,6 +626,7 @@ impl Resolver<'_> {
             version: v.version.clone(),
             status: v.status.clone(),
             package: self.app.url(&format!("/api/mods/{id}/{}/package", v.version)),
+            sha256: v.sha256.clone(),
             options,
             request,
             required_by: by.map(|b| vec![b.to_string()]).unwrap_or_default(),

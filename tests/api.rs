@@ -228,6 +228,7 @@ async fn packs_resolve_requirements_and_export_zips() {
     let ids: Vec<&str> = pack["mods"].as_array().unwrap().iter().map(|m| m["id"].as_str().unwrap()).collect();
     assert_eq!(ids, ["zap", "wrap", "core"]);
     assert_eq!(pack["mods"][0]["request"], "3 shots");
+    assert_eq!(pack["mods"][0]["sha256"].as_str().unwrap().len(), 64);
     assert_eq!(pack["mods"][0]["options"]["power"], 2);
     assert_eq!(pack["mods"][2]["required_by"], json!(["wrap", "zap"]));
     assert_eq!(pack["section_requests"], json!({ "items": "stronger" }));
