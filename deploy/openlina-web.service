@@ -1,0 +1,19 @@
+# systemd unit for rhost/VPS. Put the binary in /opt/openlina/, data in /var/lib/openlina,
+# and a reverse proxy (TLS) in front that forwards to 127.0.0.1:8080.
+[Unit]
+Description=OpenLina mod hub
+After=network.target
+
+[Service]
+User=openlina
+Environment=OPENLINA_DATA=/var/lib/openlina
+Environment=OPENLINA_PUBLIC_URL=https://openlina.example
+ExecStart=/opt/openlina/openlina-web serve --addr 127.0.0.1:8080 --trust-proxy
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/openlina
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

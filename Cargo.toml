@@ -1,0 +1,29 @@
+[package]
+name = "openlina-web"
+description = "OpenLina: the mod hub for Mosa Lina (API, voting, pack export, uploads)"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# mod.toml / modpack.toml formats, shared with the kit (sibling checkout, see README)
+openlina-sdk = { path = "../openlina-kit/tools/sdk" }
+anyhow = "1"
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "fs"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+clap = { version = "4", features = ["derive", "env"] }
+sha2 = "0.10"
+getrandom = "0.3"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
