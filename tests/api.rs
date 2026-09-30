@@ -265,3 +265,19 @@ async fn pages_and_openapi() {
     let (_, spec) = t.json(get("/api/openapi.json")).await;
     assert_eq!(spec["servers"][0]["url"], "http://hub.test");
 }
+
+#[tokio::test]
+async fn showcase_order() {
+    let t = setup();
+    let toml = b"[mod]\nid = \"gifs\"\nname = \"Gifs\"\nversion = \"1.0.0\"\nsection = \"items\"\ndescription = \"\"\nshowcase = [\"z.gif\"]\n".to_vec();
+    let zip = package_files("gifs", &[
+        ("mod.toml", toml),
+        ("patch.wasm", b"\0asm".to_vec()),
+        ("media/a.gif", b"GIF89a".to_vec()),
+        ("media/z.gif", b"GIF89a".to_vec()),
+    ]);
+    assert_eq!(t.upload(&t.admin, zip).await.0, StatusCode::CREATED);
+    let (_, v) = t.json(get("/api/mods/gifs")).await;
+    let names: Vec<&str> = v["gifs"].as_array().unwrap().iter().map(|g| g.as_str().unwrap().rsplit('/').next().unwrap()).collect();
+    assert_eq!(names, ["z.gif", "a.gif"]);
+}

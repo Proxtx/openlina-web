@@ -196,7 +196,11 @@ fn mod_out(app: &App, v: &Version, scores: &HashMap<String, i64>, mine: &HashMap
     let m = ModManifest::parse(&v.manifest)?;
     let media = |f: &str| app.url(&format!("/media/{}/{}/{f}", v.mod_id, v.version));
     let icon = v.media.iter().find(|f| f.as_str() == "icon.png").map(|f| media(f));
-    let gifs = v.media.iter().filter(|f| f.ends_with(".gif")).map(|f| media(f)).collect();
+    // mod.toml's `showcase` order first, then the rest alphabetically (media is stored sorted)
+    let mut gifs: Vec<&String> = v.media.iter().filter(|f| f.ends_with(".gif")).collect();
+    let rank = |f: &String| m.info.showcase.iter().position(|s| s == f).unwrap_or(usize::MAX);
+    gifs.sort_by_key(|f| rank(f));
+    let gifs = gifs.into_iter().map(|f| media(f)).collect();
     let options = m
         .options
         .iter()
