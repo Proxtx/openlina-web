@@ -659,6 +659,7 @@ async fn pack_zip(State(app): State<Shared>, Path(id): Path<String>) -> ApiResul
                 options: m.options.clone(),
                 request: m.request.clone(),
                 url: Some(m.package.clone()),
+                status: Some(m.status.clone()),
             })
             .collect(),
         section_requests: pack.section_requests.clone(),

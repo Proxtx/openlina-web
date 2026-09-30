@@ -250,6 +250,7 @@ async fn packs_resolve_requirements_and_export_zips() {
     let mp: openlina_sdk::manifest::ModPack = toml::from_str(&modpack).unwrap();
     assert_eq!(mp.mods.len(), 3);
     assert_eq!(mp.mods[0].request.as_deref(), Some("3 shots"));
+    assert_eq!(mp.mods[0].status.as_deref(), Some("reviewed"));
     assert_eq!(mp.mods[0].options.get("power").and_then(|v| v.as_integer()), Some(2));
     assert_eq!(mp.section_requests.get("items").map(String::as_str), Some("stronger"));
 }
