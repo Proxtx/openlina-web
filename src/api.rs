@@ -10,7 +10,8 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use openlina_sdk::manifest::{ModManifest, ModPack, OptionType, PackEntry, Section};
+use openlina_sdk::kit::{self, KitIssue, KitVersion};
+use openlina_sdk::manifest::{option_conflicts, ModManifest, ModPack, OptionType, PackEntry, Section};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -172,10 +173,29 @@ pub struct ModOut {
     requires: Vec<String>,
     conflicts: Vec<String>,
     game_builds: Vec<String>,
+    /// The openlina-kit version the mod was made with.
+    kit: String,
+    /// `port`: made for an older kit line than this site runs, so players can't install it until an
+    /// agent ports it; `update`: made with a newer kit than this site (shouldn't happen: uploads
+    /// like that are refused).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    kit_issue: Option<&'static str>,
     options: Vec<OptionOut>,
     package: String,
     size: i64,
     sha256: String,
+}
+
+/// The kit version this site runs: the openlina-kit it was built with, and of its helpers.
+pub fn site_kit() -> KitVersion {
+    KitVersion::current()
+}
+
+fn kit_issue_kind(m: &ModManifest) -> Option<&'static str> {
+    kit::issue(m, site_kit()).map(|i| match i {
+        KitIssue::Port { .. } => "port",
+        KitIssue::Update { .. } => "update",
+    })
 }
 
 /// The newest version that is not rejected, per mod.
@@ -211,6 +231,7 @@ fn mod_out(app: &App, v: &Version, scores: &HashMap<String, i64>, mine: &HashMap
             description: o.description.clone(),
         })
         .collect();
+    let (kit, kit_issue) = (m.kit().to_string(), kit_issue_kind(&m));
     Ok(ModOut {
         id: v.mod_id.clone(),
         name: m.info.name,
@@ -228,6 +249,8 @@ fn mod_out(app: &App, v: &Version, scores: &HashMap<String, i64>, mine: &HashMap
         stats: serde_json::to_value(&m.stats).unwrap_or(Value::Null),
         requires: m.info.requires,
         conflicts: m.info.conflicts,
+        kit,
+        kit_issue,
         game_builds: m.info.game_builds,
         options,
         package: app.url(&format!("/api/mods/{}/{}/package", v.mod_id, v.version)),
@@ -283,7 +306,7 @@ async fn list_mods(
             }
         }
     }
-    Ok(Json(json!({ "mods": mods, "counts": counts, "game_build": app.cfg.game_build })))
+    Ok(Json(json!({ "mods": mods, "counts": counts, "game_build": app.cfg.game_build, "kit": site_kit().to_string() })))
 }
 
 async fn mod_detail(
@@ -348,6 +371,14 @@ pub fn add_package(app: &App, bytes: &[u8], uploader: &User) -> ApiResult<Versio
         Section::Dev => return Err(bad("dev mods (test fixtures) are not published")),
         Section::Core if !uploader.admin => return Err(ApiError::new(StatusCode::FORBIDDEN, "only admins publish core mods")),
         _ => {}
+    }
+    if let Some(KitIssue::Update { kit, .. }) = kit::issue(&pkg.manifest, site_kit()) {
+        return Err(bad(format!(
+            "{} {} was made with openlina-kit {kit}, newer than this site ({}): the site's maintainer updates the site first",
+            info.id,
+            info.version,
+            site_kit()
+        )));
     }
     if let Some(owner) = app.db.mod_owner(&info.id)? {
         if owner != uploader.id && !uploader.admin {
@@ -505,6 +536,29 @@ pub struct PackOut {
     /// an agent resolves it (`lina pull` lists it as a task).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub conflicts: Vec<[String; 2]>,
+    /// Option combinations the mods declare impossible (`[[conflict]]` in mod.toml), with the reason.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub option_conflicts: Vec<String>,
+    /// The kit version of this site (what the players' openlina in the zip runs).
+    #[serde(default)]
+    pub kit: String,
+    /// Mods that don't run with this site's kit: `port` (made for an older kit line; an agent
+    /// ports them) or `update` (made with a newer kit).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kit_issues: Vec<KitIssueOut>,
+    /// Players can't install the pack as it is (conflicts, option conflicts, kit issues): the zip is
+    /// refused, an agent makes it work (`lina pull`).
+    #[serde(default)]
+    pub needs_agent: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct KitIssueOut {
+    pub id: String,
+    pub version: String,
+    pub kit: String,
+    /// `port` or `update`.
+    pub action: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -523,6 +577,9 @@ pub struct PackModOut {
     /// Added because these mods require it.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub required_by: Vec<String>,
+    /// The openlina-kit version the mod was made with.
+    #[serde(default)]
+    pub kit: String,
 }
 
 const MAX_REQUEST: usize = 2000;
@@ -589,7 +646,7 @@ async fn create_pack(State(app): State<Shared>, Json(input): Json<PackIn>) -> Ap
         }
     }
     let id = db::random_hex(5);
-    let pack = PackOut {
+    let mut pack = PackOut {
         openlina: 1,
         game_build: app.cfg.game_build.clone(),
         url: app.url(&format!("/api/packs/{id}")),
@@ -598,10 +655,76 @@ async fn create_pack(State(app): State<Shared>, Json(input): Json<PackIn>) -> Ap
         mods: out,
         section_requests,
         conflicts,
+        option_conflicts: Vec::new(),
+        kit: String::new(),
+        kit_issues: Vec::new(),
+        needs_agent: false,
         id,
     };
+    check(&app, &mut pack)?;
     app.db.insert_pack(&pack.id, &serde_json::to_string(&pack)?)?;
     Ok((StatusCode::CREATED, Json(pack)))
+}
+
+/// Fill in what keeps players from installing `pack` with this site's kit: option conflicts and
+/// kit issues, from the stored manifests (so older packs are judged by the site as it is now).
+fn check(app: &App, pack: &mut PackOut) -> ApiResult<()> {
+    let all = app.db.all_versions()?;
+    let mut manifests = Vec::new();
+    for m in &mut pack.mods {
+        let v = all.iter().find(|v| v.mod_id == m.id && v.version == m.version).ok_or_else(|| not_found("version"))?;
+        let man = ModManifest::parse(&v.manifest)?;
+        m.kit = man.kit().to_string();
+        let resolved = man.resolve_options(&m.options).map_err(|e| bad(format!("{e:#}")))?;
+        manifests.push((man, resolved));
+    }
+    let pairs: Vec<_> = manifests.iter().map(|(m, o)| (m, o)).collect();
+    pack.option_conflicts = option_conflicts(&pairs);
+    pack.kit = site_kit().to_string();
+    pack.kit_issues = kit::issues(manifests.iter().map(|(m, _)| m), site_kit())
+        .into_iter()
+        .map(|i| {
+            let (KitIssue::Port { id, version, kit } | KitIssue::Update { id, version, kit }) = &i;
+            KitIssueOut {
+                id: id.clone(),
+                version: version.clone(),
+                kit: kit.to_string(),
+                action: if matches!(i, KitIssue::Port { .. }) { "port" } else { "update" }.into(),
+            }
+        })
+        .collect();
+    pack.needs_agent = !pack.conflicts.is_empty() || !pack.option_conflicts.is_empty() || !pack.kit_issues.is_empty();
+    Ok(())
+}
+
+/// Why players can't install the pack, in a sentence per reason.
+fn agent_reasons(pack: &PackOut) -> Vec<String> {
+    let mut out = Vec::new();
+    if !pack.conflicts.is_empty() {
+        out.push(format!("{}.", conflict_list(&pack.conflicts)));
+    }
+    for c in &pack.option_conflicts {
+        out.push(format!("Options that can't work together: {c}"));
+    }
+    let port: Vec<String> = pack
+        .kit_issues
+        .iter()
+        .filter(|i| i.action == "port")
+        .map(|i| format!("{} {} (kit {})", i.id, i.version, i.kit))
+        .collect();
+    if !port.is_empty() {
+        out.push(format!(
+            "Made for an older openlina-kit than this site runs ({}): {}. An agent ports them.",
+            pack.kit,
+            port.join(", ")
+        ));
+    }
+    let update: Vec<String> =
+        pack.kit_issues.iter().filter(|i| i.action == "update").map(|i| format!("{} {} (kit {})", i.id, i.version, i.kit)).collect();
+    if !update.is_empty() {
+        out.push(format!("Made with a newer openlina-kit than this site ({}): {}.", pack.kit, update.join(", ")));
+    }
+    out
 }
 
 /// "a conflicts with b, c conflicts with d".
@@ -650,6 +773,7 @@ impl Resolver<'_> {
             options,
             request,
             required_by: by.map(|b| vec![b.to_string()]).unwrap_or_default(),
+            kit: m.kit().to_string(),
         });
         self.manifests.insert(id.to_string(), m);
         Ok(())
@@ -662,11 +786,25 @@ fn load_pack(app: &App, id: &str) -> ApiResult<PackOut> {
 }
 
 async fn get_pack(State(app): State<Shared>, Path(id): Path<String>) -> ApiResult<Json<PackOut>> {
-    Ok(Json(load_pack(&app, &id)?))
+    let mut pack = load_pack(&app, &id)?;
+    check(&app, &mut pack)?;
+    Ok(Json(pack))
 }
 
 async fn pack_zip(State(app): State<Shared>, Path(id): Path<String>) -> ApiResult<Response> {
-    let pack = load_pack(&app, &id)?;
+    let mut pack = load_pack(&app, &id)?;
+    check(&app, &mut pack)?;
+    if pack.needs_agent {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            format!(
+                "players can't install this pack as it is: {} Give the pack link to an agent with openlina-kit: \
+                 `lina pull {}`",
+                agent_reasons(&pack).join(" "),
+                pack.url
+            ),
+        ));
+    }
     let modpack = ModPack {
         openlina: 1,
         game_build: Some(pack.game_build.clone()),
@@ -686,21 +824,20 @@ async fn pack_zip(State(app): State<Shared>, Path(id): Path<String>) -> ApiResul
     };
     let helpers = app.store.helpers();
     let run = if helpers.is_empty() {
-        "Get the `openlina` helper from the openlina-kit repository (cargo build --release -p openlina), then run\n\n    openlina install openlina-pack.zip".to_string()
+        format!(
+            "Get the `openlina` helper {} from https://github.com/Proxtx/openlina-kit/releases, then run\n\n    openlina install openlina-pack.zip",
+            pack.kit
+        )
     } else {
         "Unzip anywhere, then run\n\n    ./openlina install .      (Windows: openlina.exe install .)".to_string()
     };
     let requests: BTreeSet<&str> = pack.mods.iter().filter_map(|m| m.request.as_deref()).collect();
     let readme = format!(
-        "OpenLina pack {id} for Mosa Lina (Steam build {build})\n\n{run}\n\nIt prints a Steam launch option (Mosa Lina > Properties > Launch Options).\nClear it to play vanilla again. No game files are in this zip: the helper patches\nyour own copy of the game when it starts and never changes the install.\n\nMods:\n{mods}\n{req}Pack: {url}\n",
+        "OpenLina pack {id} for Mosa Lina (Steam build {build}, openlina {kit})\n\n{run}\n\nThis adds the pack to the mods you have installed; `install --replace .` plays exactly\nthis pack.\n\nIt prints a Steam launch option (Mosa Lina > Properties > Launch Options).\nClear it to play vanilla again. No game files are in this zip: the helper patches\nyour own copy of the game when it starts and never changes the install.\n\nMods:\n{mods}\n{req}Pack: {url}\n",
         build = pack.game_build,
+        kit = pack.kit,
         mods = pack.mods.iter().map(|m| format!("  {} {} ({})\n", m.id, m.version, m.status)).collect::<String>(),
-        req = if !pack.conflicts.is_empty() {
-            format!(
-                "This pack can't be installed yet: {}. Give it to an agent with openlina-kit to\nmake them work together:\n    lina pull <pack url>\n\n",
-                conflict_list(&pack.conflicts)
-            )
-        } else if requests.is_empty() && pack.section_requests.is_empty() {
+        req = if requests.is_empty() && pack.section_requests.is_empty() {
             String::new()
         } else {
             "This pack has change requests (see modpack.toml). Give it to an agent with openlina-kit:\n    lina pull <pack url>\n\n".into()

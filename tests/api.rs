@@ -211,11 +211,12 @@ async fn packs_resolve_requirements_and_export_zips() {
     let (s, v) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "wrap" }, { "id": "edges" }] }))).await;
     assert_eq!(s, StatusCode::CREATED, "{v}");
     assert_eq!(v["conflicts"], json!([["edges", "wrap"]]));
-    let (_, zip) = t.call(get(&format!("/api/packs/{}/zip", v["id"].as_str().unwrap()))).await;
-    let mut readme = String::new();
-    let mut z = zip::ZipArchive::new(std::io::Cursor::new(zip)).unwrap();
-    std::io::Read::read_to_string(&mut z.by_name("openlina-pack/README.txt").unwrap(), &mut readme).unwrap();
-    assert!(readme.contains("can't be installed yet: edges conflicts with wrap"), "{readme}");
+    assert_eq!(v["needs_agent"], true);
+    // Players can't install it: no zip, the reason and the agent's command instead.
+    let (s, e) = t.json(get(&format!("/api/packs/{}/zip", v["id"].as_str().unwrap()))).await;
+    assert_eq!(s, StatusCode::CONFLICT);
+    let msg = e["error"].as_str().unwrap();
+    assert!(msg.contains("edges conflicts with wrap") && msg.contains("lina pull"), "{msg}");
     let (s, _) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "zap", "options": { "nope": 1 } }] }))).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
     let (s, _) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "zap" }], "section_requests": { "bogus": "x" } }))).await;
@@ -243,6 +244,9 @@ async fn packs_resolve_requirements_and_export_zips() {
 
     let (s, again) = t.json(get(&format!("/api/packs/{id}"))).await;
     assert_eq!((s, &again), (StatusCode::OK, &pack));
+    assert_eq!(pack["needs_agent"], false);
+    assert_eq!(pack["kit"], openlina_sdk::kit::KIT_VERSION);
+    assert_eq!(pack["mods"][0]["kit"], "0.1.0"); // no `kit` in mod.toml: made before kit versions
 
     let (s, zip) = t.call(get(&format!("/api/packs/{id}/zip"))).await;
     assert_eq!(s, StatusCode::OK);
@@ -259,6 +263,66 @@ async fn packs_resolve_requirements_and_export_zips() {
     assert_eq!(mp.mods[0].status.as_deref(), Some("reviewed"));
     assert_eq!(mp.mods[0].options.get("power").and_then(|v| v.as_integer()), Some(2));
     assert_eq!(mp.section_requests.get("items").map(String::as_str), Some("stronger"));
+}
+
+/// A kit version on the same line as the site's, but older (`0.N.0`), and one on an older line.
+fn kits() -> (String, String) {
+    let cur = openlina_sdk::kit::KitVersion::current();
+    let older_line = if cur.1 > 0 { format!("0.{}.0", cur.1 - 1) } else { "0.0.1".into() };
+    (format!("{}.{}.0", cur.0, cur.1), older_line)
+}
+
+#[tokio::test]
+async fn kit_versions() {
+    let t = setup();
+    let (same, older) = kits();
+    t.upload(&t.admin, package("core", "0.5.0", "core", &format!("kit = \"{same}\""))).await;
+    t.upload(&t.admin, package("ok", "1.0.0", "items", &format!("kit = \"{same}\"\nrequires = [\"core\"]"))).await;
+    let (s, v) = t.upload(&t.admin, package("old", "1.0.0", "items", &format!("kit = \"{older}\"\nrequires = [\"core\"]"))).await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+
+    // Mods made with a newer kit than the site are refused.
+    let cur = openlina_sdk::kit::KitVersion::current();
+    let newer = format!("{}.{}.{}", cur.0, cur.1, cur.2 + 1);
+    let (s, v) = t.upload(&t.admin, package("new", "1.0.0", "items", &format!("kit = \"{newer}\""))).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+    assert!(v["error"].as_str().unwrap().contains("newer than this site"), "{v}");
+
+    // The site shows the kit; older-line mods need an agent.
+    let (_, v) = t.json(get("/api/mods/old")).await;
+    assert_eq!((v["kit"].as_str(), v["kit_issue"].as_str()), (Some(older.as_str()), Some("port")));
+    let (_, v) = t.json(get("/api/mods/ok")).await;
+    assert_eq!(v["kit"], same);
+    assert!(v.get("kit_issue").is_none(), "{v}");
+    let (_, v) = t.json(get("/api/mods")).await;
+    assert_eq!(v["kit"], openlina_sdk::kit::KIT_VERSION);
+
+    // A pack with one: no zip for players, a task for the agent.
+    let (_, pack) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "ok" }, { "id": "old" }] }))).await;
+    assert_eq!(pack["needs_agent"], true);
+    assert_eq!(pack["kit_issues"], json!([{ "id": "old", "version": "1.0.0", "kit": older, "action": "port" }]));
+    let (s, e) = t.json(get(&format!("/api/packs/{}/zip", pack["id"].as_str().unwrap()))).await;
+    assert_eq!(s, StatusCode::CONFLICT);
+    assert!(e["error"].as_str().unwrap().contains("older openlina-kit"), "{e}");
+    let (_, pack) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "ok" }] }))).await;
+    assert_eq!(pack["needs_agent"], false);
+    let (s, _) = t.call(get(&format!("/api/packs/{}/zip", pack["id"].as_str().unwrap()))).await;
+    assert_eq!(s, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn option_conflicts_need_an_agent() {
+    let t = setup();
+    t.upload(&t.admin, package("core", "0.5.0", "core", "")).await;
+    let decl = "requires = [\"core\"]\n\n[[conflict]]\nwith = \"b\"\noptions = { power = 2 }\nreason = \"too strong together\"\n";
+    let (s, v) = t.upload(&t.admin, package("a", "1.0.0", "items", decl)).await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    t.upload(&t.admin, package("b", "1.0.0", "items", "requires = [\"core\"]")).await;
+    let (_, pack) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "a", "options": { "power": 2 } }, { "id": "b" }] }))).await;
+    assert_eq!(pack["needs_agent"], true, "{pack}");
+    assert!(pack["option_conflicts"][0].as_str().unwrap().contains("too strong together"), "{pack}");
+    let (_, pack) = t.json(post_json("/api/packs", json!({ "mods": [{ "id": "a" }, { "id": "b" }] }))).await;
+    assert_eq!(pack["needs_agent"], false, "{pack}");
 }
 
 #[tokio::test]

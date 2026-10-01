@@ -16,16 +16,32 @@ mosa-mod/
 
 ## Run locally
 
+Needs a Rust toolchain (rustup; `nix develop` works too, then binaries land in `target/nix/` instead of
+`target/`).
+
 ```bash
-nix develop                              # Rust toolchain
 cargo build --release
-B=target/nix/release/openlina-web
+B=target/release/openlina-web
 $B user-add admin --admin                # prints the admin's upload token (shown once)
-(cd ../openlina-kit && lina pack)        # package zips of the kit's mods in ../openlina-kit/dist/
-$B import ../openlina-kit/dist/core-0.4.0.zip ../openlina-kit/dist/portal-gun-0.1.0.zip …
-cp ../openlina-kit/target/nix/release/openlina data/helpers/   # optional: helper inside pack zips
+(cd ../openlina-kit && ./lina pack)      # package zips of the kit's mods in ../openlina-kit/dist/
+$B import ../openlina-kit/dist/core-0.5.0.zip ../openlina-kit/dist/portal-gun-0.2.0.zip …
+mkdir -p data/helpers && cp ../openlina-kit/target/release/openlina data/helpers/   # helper inside pack zips
 $B serve                                 # http://127.0.0.1:8080
 ```
+
+## Kit versions
+
+The site runs the openlina-kit version it was built with (`openlina_sdk::kit::KIT_VERSION`, shown on the
+agents page and in `GET /api/mods` as `kit`); the helpers in `data/helpers/` must come from the same kit
+checkout (or its GitHub release). Every mod's `mod.toml` names the kit it was made with (`kit`, none = 0.1.0).
+Versions within a line (`0.1.x`) work together; a new line (`0.2`) means mods made for older lines need an
+agent to port them:
+
+- uploads made with a newer kit than the site are refused: update the site first (pull the kit, rebuild,
+  replace the helpers);
+- mods made for an older line show NEEDS AN AGENT (`kit_issue: "port"`);
+- a pack with such a mod, conflicting mods or a declared option conflict (`[[conflict]]`) has
+  `needs_agent: true`: its zip is refused (409 with the reasons), its JSON goes to an agent (`lina pull`).
 
 Everything lives in `--data` (default `./data`, git-ignored):
 
@@ -61,8 +77,8 @@ API links), `--game-build <build>`.
   `rejected` (hidden, not downloadable). Admin uploads are `reviewed`. Queue: `/review` or `GET /api/review`.
 - **Votes**: one per mod per network: the key is `sha256(secret salt + client IP)`; raw addresses are never
   stored. Voting again with the same value is sent as `0` (take it back).
-- **Packs**: `POST /api/packs` pins versions, adds required mods (`required_by`), refuses conflicts, checks options
-  against `mod.toml`, and stores the pack under a short id. `GET /api/packs/<id>` (JSON) and
+- **Packs**: `POST /api/packs` pins versions, adds required mods (`required_by`), checks options against
+  `mod.toml`, lists what needs an agent (see "Kit versions"), and stores the pack under a short id. `GET /api/packs/<id>` (JSON) and
   `/api/packs/<id>/zip` (for players; `openlina-pack/` with `modpack.toml`, `mods/<id>/`, helpers, README).
   Change requests (per mod and per section, up to 2000 characters) travel in both.
 - **No game files** are ever stored or served: players' helpers patch their own copy of the game.
@@ -81,10 +97,10 @@ The approved design prototype is in `design/` (Claude Design canvas).
 ## Tests
 
 `cargo test --release`: uploads and their rules, listing/search/detail/media, votes per network, review,
-pack resolution and the exported zip (`tests/api.rs`).
+pack resolution and the exported zip, kit versions and option conflicts (`tests/api.rs`).
 
 ## Deploy (rhost / VPS)
 
-Build with `cargo build --release`, copy `target/nix/release/openlina-web` to the server, run it behind a TLS
+Build with `cargo build --release`, copy `target/release/openlina-web` to the server, run it behind a TLS
 reverse proxy with `--trust-proxy` and `--public-url https://your.host`. Example unit: `deploy/openlina-web.service`.
 Back up the data directory (SQLite in WAL mode: stop the service or use `sqlite3 openlina.db .backup`).

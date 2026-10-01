@@ -62,7 +62,7 @@ pub fn spec(public_url: &str) -> Value {
             },
             "/api/packs": {
                 "post": {
-                    "summary": "Create a pack: pins versions, adds required mods, checks options; lists conflicting mods under `conflicts` (an agent resolves them)",
+                    "summary": "Create a pack: pins versions, adds required mods, checks options; lists what players can't install for an agent: conflicting mods (`conflicts`), declared option conflicts (`option_conflicts`), mods made for another openlina-kit version than the site's `kit` (`kit_issues`: port or update); `needs_agent` sums it up",
                     "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": {
                         "mods": { "type": "array", "items": { "type": "object", "required": ["id"], "properties": {
                             "id": { "type": "string" }, "version": { "type": "string" },
@@ -72,7 +72,7 @@ pub fn spec(public_url: &str) -> Value {
                 }
             },
             "/api/packs/{id}": { "get": { "summary": "A pack as JSON: mods with versions, package URLs, options, change requests", "parameters": [pack], "responses": { "200": ok("pack") } } },
-            "/api/packs/{id}/zip": { "get": { "summary": "A pack as a zip for players (`openlina install`)", "parameters": [pack], "responses": { "200": zip } } },
+            "/api/packs/{id}/zip": { "get": { "summary": "A pack as a zip for players (`openlina install`); 409 when the pack `needs_agent`", "parameters": [pack], "responses": { "200": zip, "409": { "description": "players can't install it as it is (see the message)" } } } },
             "/api/me": { "get": { "summary": "The token's user and their uploads", "security": bearer, "responses": { "200": ok("{name, admin, uploads}") } } },
             "/api/me/token": { "post": { "summary": "Replace the token (the old one stops working)", "security": bearer, "responses": { "200": ok("{name, token}") } } },
             "/api/review": { "get": { "summary": "Unreviewed uploads (admins)", "security": bearer, "responses": { "200": ok("{pending}") } } }

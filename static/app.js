@@ -10,6 +10,7 @@ const SECTIONS = {
   core: { label: 'CORE', color: '#a8a8a8', hint: '', icon: 'menu' },
 };
 const ORDER = ['items', 'modifiers', 'levels', 'general'];
+const KIT_REPO = 'https://github.com/Proxtx/openlina-kit';
 
 // Pixel icons for the section tabs (12x12, one char per pixel).
 const PAL = { k: '#0d0d0d', w: '#ffffff', g: '#a8a8a8', d: '#5e6175', b: '#419ecd', o: '#e8883a', m: '#79617b', r: '#b0506a', y: '#e2c35a' };
@@ -185,7 +186,8 @@ async function browse(app) {
     const thumb = h('a', { class: 'thumb', href: link, 'aria-label': 'Open ' + m.name },
       m.gifs.length ? h('img', { src: m.gifs[0], alt: `${m.name} in action`, loading: 'lazy', class: 'px' }) : h('span', { class: 'noimg' }, pixelIcon(s.icon, 72)),
       m.gifs.length ? h('span', { class: 'tag' }, 'GIF · ' + m.gifs.length) : null,
-      m.status !== 'reviewed' ? h('span', { class: 'tag right' }, m.status.toUpperCase()) : null);
+      m.kit_issue ? h('span', { class: 'tag right', title: `Made for openlina-kit ${m.kit}; this site runs ${data.kit}. An agent can update it.` }, 'NEEDS AN AGENT')
+        : m.status !== 'reviewed' ? h('span', { class: 'tag right' }, m.status.toUpperCase()) : null);
     return h('article', { class: 'card', style: { '--c': s.color } }, thumb,
       h('div', { class: 'body' },
         h('div', { class: 'row' }, modIcon(m), h('div', { style: { minWidth: 0 } }, h('h2', {}, h('a', { href: link }, m.name)), h('span', { class: 'small muted' }, 'by ' + (m.authors.join(', ') || m.uploaded_by)))),
@@ -260,6 +262,7 @@ async function modPage(app) {
 
   const stats = [...Object.entries(m.stats || {}).map(([k, v]) => [k.replace(/_/g, ' '), Array.isArray(v) ? v.join(', ') : String(v)])];
   stats.push(['Version', m.version]);
+  stats.push(['openlina-kit', m.kit + (m.kit_issue === 'port' ? ' (older: needs an agent)' : m.kit_issue === 'update' ? ' (newer than this site)' : '')]);
   if (m.game_builds.length) stats.push(['Game build', m.game_builds.join(', ')]);
   if (m.requires.length) stats.push(['Requires', m.requires.join(', ')]);
   if (m.conflicts.length) stats.push(['Conflicts with', m.conflicts.join(', ')]);
@@ -285,6 +288,8 @@ async function modPage(app) {
         h('table', { class: 'kv' }, h('caption', {}, 'STATS'), h('tbody', {}, stats.map(([k, v]) => h('tr', {}, h('th', { scope: 'row' }, k), h('td', {}, v.toUpperCase()))))),
         h('div', { class: 'row' }, voteBox(m, null, true), addButton(m, 'wide', ['ADD TO PACK', 'IN YOUR PACK'], syncReq)),
         reqWrap,
+        m.kit_issue === 'port' ? h('div', { class: 'panel stack', style: { gap: '6px', borderColor: 'var(--yellow)' } }, h('strong', { style: { color: 'var(--yellow)' } }, 'NEEDS AN AGENT'),
+          h('p', { class: 'small', style: { margin: 0, lineHeight: 1.6 } }, `Made for openlina-kit ${m.kit}, an older version than this site runs. Players can't install it as it is; packs with it give your agent a task to update it (`, h('code', {}, 'lina pull'), ').')) : null,
         m.options.length ? h('table', { class: 'kv' }, h('caption', {}, 'OPTIONS'), h('tbody', {}, m.options.map((o) =>
           h('tr', {}, h('th', { scope: 'row' }, h('code', {}, o.key), h('div', { class: 'small' }, o.description)), h('td', { style: { whiteSpace: 'nowrap' } }, JSON.stringify(o.default)))))) : null,
         h('div', { class: 'pkg' }, h('b', {}, 'PACKAGE'),
@@ -333,7 +338,7 @@ async function packPage(app) {
           h('div', { class: 'panel stack', style: { gap: '12px' } }, h('span', { style: { fontFamily: 'var(--pixel)', fontSize: '20px', color: 'var(--grey)' } }, 'INSIDE THE ZIP'),
             h('pre', { class: 'code', style: { padding: 0 } }, ['openlina-pack/', '  openlina            helper (when the site provides it)', '  modpack.toml        mods, options, requests', '  mods/', '    core/             added automatically', ...ids.map((id) => `    ${(id + '/').padEnd(18)}mod.toml, patch.wasm, assets/`)].join('\n')),
             h('span', { class: 'small muted' }, 'No game files inside. The helper patches your own copy of Mosa Lina and never changes the install.')),
-          h('ol', { class: 'steps' }, h('li', {}, 'Unzip anywhere, then run ', h('code', {}, './openlina install .')),
+          h('ol', { class: 'steps' }, h('li', {}, 'Unzip anywhere, then run ', h('code', {}, './openlina install .'), ' (adds to your installed mods; ', h('code', {}, '--replace'), ' plays exactly this pack).'),
             h('li', {}, 'Steam › Mosa Lina › Properties › Launch options: paste the line it prints.'),
             h('li', {}, 'Play. Clear the launch option to go back to vanilla.')))
         : h('p', { class: 'muted', style: { margin: 0, lineHeight: 1.6, fontSize: '13px' } }, 'Give the JSON or its link to your agent: ', h('code', { style: { color: '#fff' } }, 'lina pull <pack link>'), ' downloads the mods, applies the requests, tests and installs.'),
@@ -354,12 +359,19 @@ async function packPage(app) {
     }
     const added = pack.mods.filter((m) => m.required_by && m.required_by.length);
     const note = added.length ? h('p', { class: 'small muted', style: { margin: 0 } }, 'Added because other mods need them: ' + added.map((m) => m.id).join(', ')) : null;
-    const conflicts = pack.conflicts || [];
-    const warn = conflicts.length ? h('div', { class: 'panel stack', style: { gap: '8px', borderColor: 'var(--yellow)' } },
-      h('strong', { style: { color: 'var(--yellow)' } }, 'NEEDS AN AGENT'),
-      h('p', { class: 'small', style: { margin: 0, lineHeight: 1.6 } }, conflicts.map(([a, b]) => `${a} conflicts with ${b}`).join(', ') + '. The pack is saved, but players can\'t install it as is. Give its link to your agent: ', h('code', {}, 'lina pull ' + pack.url), ' lists the conflict as a task, and the agent changes the mods so they work together.')) : null;
-    if (warn) {
-      // A zip wouldn't install: show the link for the agent instead.
+    const reasons = [
+      ...(pack.conflicts || []).map(([a, b]) => `${a} conflicts with ${b}.`),
+      ...(pack.option_conflicts || []).map((c) => `Options that can't work together: ${c}`),
+      ...(pack.kit_issues || []).map((i) => i.action === 'port'
+        ? `${i.id} ${i.version} was made for openlina-kit ${i.kit}, older than this site's ${pack.kit}.`
+        : `${i.id} ${i.version} was made with openlina-kit ${i.kit}, newer than this site's ${pack.kit}.`),
+    ];
+    if (pack.needs_agent) {
+      // Players can't install it (the site refuses the zip): show the link for the agent instead.
+      const warn = h('div', { class: 'panel stack', style: { gap: '8px', borderColor: 'var(--yellow)' } },
+        h('strong', { style: { color: 'var(--yellow)' } }, 'NEEDS AN AGENT'),
+        reasons.map((r) => h('p', { class: 'small', style: { margin: 0, lineHeight: 1.6 } }, r)),
+        h('p', { class: 'small', style: { margin: 0, lineHeight: 1.6 } }, 'The pack is saved, but players can\'t install it as it is. Give its link to your agent: ', h('code', {}, 'lina pull ' + pack.url), ' turns each point into a task, and the agent changes the mods so the pack works.'));
       const b = h('button', { type: 'button', class: 'btn primary', onclick: (e) => navigator.clipboard.writeText(pack.url).then(() => { e.target.textContent = 'COPIED'; }, () => { e.target.textContent = 'COPY FAILED'; }) }, 'COPY LINK');
       fill(result, warn, h('div', { class: 'row' }, b), h('code', { class: 'small' }, pack.url), note);
       return;
@@ -396,6 +408,8 @@ async function agentsPage(app) {
     ['POST', '/api/mods/{id}/vote', 'vote {"value": 1 | -1 | 0}'],
     ['GET', '/api/me', 'your uploads (token)'],
   ];
+  const kitNote = h('p', { class: 'small muted', style: { margin: 0, lineHeight: 1.6 } });
+  api('/api/mods').then((d) => fill(kitNote, `This site runs openlina-kit ${d.kit}. Every mod says which kit it was made with; when a new kit version changes what mods rely on, older mods show NEEDS AN AGENT and an agent ports them (`, h('code', { style: { color: '#fff' } }, 'lina pull'), ' lists it as a task). Keep the kit up to date: ', h('code', { style: { color: '#fff' } }, 'git pull'), '.'), () => {});
   const tokenInput = h('input', { class: 'input', type: 'password', placeholder: 'olt_…', autocomplete: 'off', value: store.get('token', '') });
   const uploads = h('div', {});
   async function loadMe() {
@@ -425,12 +439,13 @@ async function agentsPage(app) {
       h('p', { class: 'muted', style: { margin: 0, maxWidth: '900px', lineHeight: 1.7 } }, 'Agents build mods with ', h('strong', { style: { color: '#fff' } }, 'openlina-kit'), ': a skill, docs and the ', h('code', { style: { color: '#fff' } }, 'lina'), ' CLI. They pull packs from here, apply your change requests, test in the real game, record showcase gifs, and upload after asking you.')),
     h('div', { class: 'agents' },
       h('section', { class: 'panel', style: { '--c': 'var(--items)' } }, h('h2', {}, '1 · GET THE KIT'),
-        h('pre', { class: 'code', style: { padding: 0 } }, 'git clone …/openlina-kit\ncd openlina-kit\nnix develop          # rust, wasm target, gif tools\ncargo build --release\nlina setup           # reads your local game'),
-        h('p', { class: 'small muted', style: { margin: 0 } }, 'Claude Code picks up the ', h('code', { style: { color: '#fff' } }, 'openlina-modding'), ' skill from the repo.')),
+        h('pre', { class: 'code', style: { padding: 0 } }, 'git clone ' + KIT_REPO + '\ncd openlina-kit\n./lina doctor        # checks Rust, the wasm target, the game\n./lina setup         # reads your local game'),
+        h('p', { class: 'small muted', style: { margin: 0, lineHeight: 1.6 } }, 'Claude Code picks up the ', h('code', { style: { color: '#fff' } }, 'openlina-modding'), ' skill from the repo. Releases and the player\'s ', h('code', { style: { color: '#fff' } }, 'openlina'), ' helper: ', h('a', { href: KIT_REPO + '/releases' }, 'GitHub releases'), '.'),
+        kitNote),
       h('section', { class: 'panel', style: { '--c': 'var(--modifiers)' } }, h('h2', {}, '2 · UPLOAD TOKEN'),
         h('p', { class: 'small muted', style: { margin: 0, lineHeight: 1.6 } }, 'Your agent uploads in your name with a token from the site maintainer. It asks you before every upload. You can replace the token any time.'),
         h('div', { class: 'row' }, tokenInput, h('button', { type: 'button', class: 'btn', onclick: loadMe }, 'USE')),
-        h('pre', { class: 'code', style: { padding: 0 } }, `lina login ${origin} olt_…`)),
+        h('pre', { class: 'code', style: { padding: 0 } }, `./lina login ${origin}    # paste the token at the prompt`)),
       h('section', { class: 'panel', style: { '--c': 'var(--levels)' } }, h('h2', {}, '3 · API'),
         h('table', { class: 'api' }, h('tbody', {}, endpoints.map(([m, p, w]) => h('tr', {}, h('td', {}, m), h('td', {}, h('code', {}, p)), h('td', {}, w))))),
         h('p', { class: 'small muted', style: { margin: 0 } }, 'OpenAPI spec at ', h('a', { href: '/api/openapi.json' }, '/api/openapi.json'), '. Voting is one vote per mod per network (salted IP hash, no raw IPs stored).')),
