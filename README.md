@@ -99,8 +99,31 @@ The approved design prototype is in `design/` (Claude Design canvas).
 `cargo test --release`: uploads and their rules, listing/search/detail/media, votes per network, review,
 pack resolution and the exported zip, kit versions and option conflicts (`tests/api.rs`).
 
-## Deploy (rhost / VPS)
+## Deploy
 
-Build with `cargo build --release`, copy `target/release/openlina-web` to the server, run it behind a TLS
-reverse proxy with `--trust-proxy` and `--public-url https://your.host`. Example unit: `deploy/openlina-web.service`.
+**NixOS** (the flake builds the site against the kit release pinned in `flake.nix` and serves that release's
+`openlina` helper in pack zips):
+
+```nix
+# flake inputs
+openlina-web = { url = "github:Proxtx/openlina-web"; inputs.nixpkgs.follows = "nixpkgs"; };
+
+# a module
+{ inputs, ... }: {
+  imports = [ inputs.openlina-web.nixosModules.default ];
+  services.openlina-web = { enable = true; port = 8012; publicUrl = "https://openlina.example.org"; };
+  services.nginx.virtualHosts."openlina.example.org" = {
+    enableACME = true; forceSSL = true;
+    locations."/" = { proxyPass = "http://127.0.0.1:8012"; recommendedProxySettings = true; };
+  };
+}
+```
+
+Data lives in `/var/lib/openlina-web`. Administration as the service user: `sudo openlina-web-admin user-add <name>
+--admin` (prints the token once), `sudo openlina-web-admin import <zip>…`, `sudo openlina-web-admin review`.
+
+**Elsewhere**: build with `cargo build --release`, copy `target/release/openlina-web` to the server, run it
+behind a TLS reverse proxy with `--trust-proxy` and `--public-url https://your.host`. Example unit:
+`deploy/openlina-web.service`.
+
 Back up the data directory (SQLite in WAL mode: stop the service or use `sqlite3 openlina.db .backup`).

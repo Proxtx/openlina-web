@@ -16,9 +16,27 @@
         "type": "github"
       }
     },
+    "openlina-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790846210,
+        "narHash": "sha256-MZK/0AAP5Ey7fITaxiCIKgrXRY9PiB+e6qNihZk2Zfs=",
+        "owner": "Proxtx",
+        "repo": "openlina-kit",
+        "rev": "3c578f06926c469feba3a865d5ae0ee71bd9fc7c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Proxtx",
+        "ref": "v0.1.0",
+        "repo": "openlina-kit",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
+        "openlina-kit": "openlina-kit",
         "rust-overlay": "rust-overlay"
       }
     },
