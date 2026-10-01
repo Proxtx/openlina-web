@@ -19,16 +19,16 @@
     "openlina-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1790846210,
-        "narHash": "sha256-MZK/0AAP5Ey7fITaxiCIKgrXRY9PiB+e6qNihZk2Zfs=",
+        "lastModified": 1790878956,
+        "narHash": "sha256-NuJnwLyyN/41Y8JJV6ssfcBnDXHLJZKVQeIyBdnsyWo=",
         "owner": "Proxtx",
         "repo": "openlina-kit",
-        "rev": "3c578f06926c469feba3a865d5ae0ee71bd9fc7c",
+        "rev": "a8c7f937f1160d4edecabfc7f38dfadd24e08288",
         "type": "github"
       },
       "original": {
         "owner": "Proxtx",
-        "ref": "v0.1.0",
+        "ref": "v0.1.2",
         "repo": "openlina-kit",
         "type": "github"
       }

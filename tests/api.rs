@@ -76,8 +76,15 @@ fn package(id: &str, version: &str, section: &str, extra: &str) -> Vec<u8> {
         ("patch.wasm", b"\0asm\x01\0\0\0".to_vec()),
         ("media/icon.png", b"\x89PNG fake".to_vec()),
         ("media/show.gif", b"GIF89a fake".to_vec()),
-        ("assets/images/x.png", b"\x89PNG".to_vec()),
+        ("assets/images/x.png", png_header(8, 6)),
     ])
+}
+
+/// The start of a PNG with this bit depth and color type (all the website reads of `assets/` images).
+fn png_header(bits: u8, color: u8) -> Vec<u8> {
+    let mut b = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR\0\0\0\x18\0\0\0\x18".to_vec();
+    b.extend([bits, color, 0, 0, 0]);
+    b
 }
 
 fn package_files(prefix: &str, files: &[(&str, Vec<u8>)]) -> Vec<u8> {
@@ -350,4 +357,27 @@ async fn showcase_order() {
     let (_, v) = t.json(get("/api/mods/gifs")).await;
     let names: Vec<&str> = v["gifs"].as_array().unwrap().iter().map(|g| g.as_str().unwrap().rsplit('/').next().unwrap()).collect();
     assert_eq!(names, ["z.gif", "a.gif"]);
+}
+
+#[tokio::test]
+async fn images_the_game_cant_load_are_refused() {
+    let t = setup();
+    let toml = "[mod]\nid = \"pistol\"\nname = \"Pistol\"\nversion = \"0.1.0\"\nsection = \"items\"\ndescription = \"x\"\n";
+    let files = |big: Vec<u8>| {
+        package_files("pistol", &[
+            ("mod.toml", toml.as_bytes().to_vec()),
+            ("patch.wasm", b"\0asm\x01\0\0\0".to_vec()),
+            ("assets/images/small.png", png_header(8, 3)),
+            ("assets/images/big.png", big),
+            ("media/icon.png", png_header(4, 3)), // media is for browsers: any PNG
+        ])
+    };
+    let (s, v) = t.upload(&t.alice, files(png_header(4, 3))).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "{v}");
+    let e = v["error"].as_str().unwrap();
+    assert!(e.contains("assets/images/big.png: 4-bit palette PNG"), "{e}");
+    assert!(e.contains("magick assets/images/big.png PNG32:assets/images/big.png"), "{e}");
+    assert!(!e.contains("small.png"), "{e}");
+    let (s, v) = t.upload(&t.alice, files(png_header(16, 6))).await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
 }

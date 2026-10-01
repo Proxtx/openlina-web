@@ -94,6 +94,21 @@ pre.code { margin: 0; background: var(--black); padding: 16px 18px; font-size: 1
 .seg .btn { border-color: var(--line2); color: var(--grey); }
 .seg .btn.on { color: var(--black); }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 22px; }
+
+/* loading a list: a marching pixel bar in the section color; the old cards dim, placeholders blink */
+.loadbar { height: 8px; margin: -10px 0 14px; overflow: hidden; color: transparent; font-size: 0; visibility: hidden; }
+.loadbar.on { visibility: visible; background: repeating-linear-gradient(90deg, var(--c) 0 16px, transparent 16px 32px); background-size: 32px 8px; animation: march .48s steps(4) infinite; }
+@keyframes march { to { background-position: 32px 0; } }
+.cards.loading > :not(.skeleton) { opacity: .3; pointer-events: none; transition: opacity .12s; }
+.card.skeleton { pointer-events: none; }
+.card.skeleton .thumb, .card.skeleton .sk { background: var(--field); animation: blink 1s steps(2) infinite; }
+.card.skeleton .thumb { border-bottom-color: var(--c); }
+.card.skeleton .sk { display: block; height: 14px; }
+.card.skeleton .body { min-height: 150px; }
+@keyframes blink { 50% { background: var(--line); } }
+@media (prefers-reduced-motion: reduce) {
+  .loadbar.on, .card.skeleton .thumb, .card.skeleton .sk { animation: none; }
+}
 .card { display: flex; flex-direction: column; background: var(--card); border: 4px solid var(--black); box-shadow: 6px 6px 0 var(--black); transition: transform .08s; }
 .card:hover { transform: translateY(-2px); }
 .thumb { position: relative; display: block; aspect-ratio: 600 / 338; background: var(--field); border-bottom: 4px solid var(--black); overflow: hidden; }

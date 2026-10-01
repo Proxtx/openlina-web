@@ -366,6 +366,17 @@ async fn media(State(app): State<Shared>, Path((id, version, file)): Path<(Strin
 /// Store an uploaded package. `status` for admin uploads and imports is "reviewed".
 pub fn add_package(app: &App, bytes: &[u8], uploader: &User) -> ApiResult<Version> {
     let pkg = store::inspect(bytes).map_err(|e| bad(format!("{e:#}")))?;
+    if !pkg.bad_images.is_empty() {
+        let list: Vec<String> = pkg
+            .bad_images
+            .iter()
+            .map(|(f, why)| format!("assets/{f}: {why}; fix: {}", openlina_sdk::assets::png_fix(&format!("assets/{f}"))))
+            .collect();
+        return Err(bad(format!(
+            "images the game can't load (it freezes on a black screen while starting): {}",
+            list.join("; ")
+        )));
+    }
     let info = &pkg.manifest.info;
     match info.section {
         Section::Dev => return Err(bad("dev mods (test fixtures) are not published")),

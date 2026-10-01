@@ -151,7 +151,7 @@ function setFooter(t) { document.getElementById('footer-label').textContent = t;
 
 async function browse(app) {
   let section = ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : store.get('section', 'items');
-  let sort = 'top', q = '', data = null, timer = null;
+  let sort = 'top', q = '', data = null, timer = null, seq = 0;
 
   const hero = h('section', { class: 'hero' },
     h('div', {},
@@ -163,15 +163,17 @@ async function browse(app) {
   const search = h('input', { type: 'search', id: 'search', placeholder: 'Search', oninput: (e) => { q = e.target.value; clearTimeout(timer); timer = setTimeout(load, 200); } });
   const sortBtns = h('div', { class: 'seg', role: 'group', 'aria-label': 'Sort' });
   const cards = h('div', { class: 'cards' });
+  // Shown while a list loads: a marching bar in the section color (and its text for screen readers).
+  const loadbar = h('div', { class: 'loadbar', role: 'status', 'aria-live': 'polite' });
   const aside = h('aside', { class: 'cart', 'aria-label': 'Your pack' });
   fill(app, hero, tabs, h('div', { class: 'browse' },
-    h('div', {}, h('div', { class: 'tools' }, h('label', { for: 'search' }, 'SEARCH'), search, sortBtns), cards), aside));
+    h('div', {}, h('div', { class: 'tools' }, h('label', { for: 'search' }, 'SEARCH'), search, sortBtns), loadbar, cards), aside));
 
   function renderTabs() {
     fill(tabs, ...ORDER.map((key) => {
       const s = SECTIONS[key];
       return h('button', { type: 'button', class: 'tab' + (key === section ? ' on' : ''), style: { '--c': s.color }, 'aria-pressed': String(key === section),
-        onclick: () => { section = key; store.set('section', key); history.replaceState(null, '', '#' + key); load(); } },
+        onclick: () => { if (key === section) return; section = key; store.set('section', key); history.replaceState(null, '', '#' + key); load(true); } },
         pixelIcon(s.icon, 44), h('span', {}, h('b', {}, s.label), h('small', {}, `${data ? data.counts[key] ?? 0 : '…'} mods`)));
     }));
     fill(sortBtns, ...[['top', 'TOP'], ['new', 'NEW']].map(([k, l]) =>
@@ -196,14 +198,41 @@ async function browse(app) {
         h('div', { class: 'foot' }, voteBox(m), addButton(m, '', ['ADD', 'ADDED'], renderCart))));
   }
 
-  async function load() {
+  function skeleton() {
+    return h('article', { class: 'card skeleton', 'aria-hidden': 'true' }, h('div', { class: 'thumb' }),
+      h('div', { class: 'body' }, h('i', { class: 'sk', style: { width: '60%' } }), h('i', { class: 'sk', style: { width: '90%' } }), h('i', { class: 'sk', style: { width: '40%' } })));
+  }
+
+  // `switched`: another section, so the cards on screen are the wrong ones. They dim at once and, if
+  // the list takes longer than a blink, make way for placeholders. Only the latest request renders.
+  async function load(switched = false) {
+    const mine = ++seq;
     renderTabs();
+    const color = SECTIONS[section].color;
+    loadbar.style.setProperty('--c', color);
+    loadbar.classList.add('on');
+    loadbar.textContent = `Loading ${SECTIONS[section].label.toLowerCase()}…`;
+    cards.style.setProperty('--c', color);
+    cards.classList.add('loading');
+    cards.setAttribute('aria-busy', 'true');
+    const placeholders = switched ? setTimeout(() => { if (mine === seq) fill(cards, skeleton(), skeleton(), skeleton()); }, 120) : null;
+    let next;
     try {
-      data = await api(`/api/mods?section=${section}&sort=${sort}&q=${encodeURIComponent(q)}`);
+      next = await api(`/api/mods?section=${section}&sort=${sort}&q=${encodeURIComponent(q)}`);
     } catch (e) {
-      fill(cards, h('p', { class: 'err' }, 'Could not load mods: ' + e.message));
+      next = e;
+    }
+    clearTimeout(placeholders);
+    if (mine !== seq) return;
+    loadbar.classList.remove('on');
+    loadbar.textContent = '';
+    cards.classList.remove('loading');
+    cards.removeAttribute('aria-busy');
+    if (next instanceof Error) {
+      fill(cards, h('p', { class: 'err' }, 'Could not load mods: ' + next.message));
       return;
     }
+    data = next;
     document.getElementById('build').textContent = data.game_build;
     renderTabs();
     fill(cards, ...data.mods.map(card),

@@ -79,6 +79,9 @@ pub struct Inspected {
     pub media: Vec<(String, Vec<u8>)>,
     /// Folder the files sit in inside the zip (`"<id>/"` or `""`).
     pub prefix: String,
+    /// `assets/` images the game can't load (`openlina_sdk::assets`): (path in `assets/`, why).
+    /// New uploads with any are refused; stored packages keep working (`openlina` converts them).
+    pub bad_images: Vec<(String, String)>,
 }
 
 /// Check an uploaded package zip: safe paths, size limits, a valid `mod.toml` and a wasm patch.
@@ -135,7 +138,18 @@ pub fn inspect(bytes: &[u8]) -> Result<Inspected> {
         media.push((file.to_string(), read_file(&mut zip, n)?));
     }
     media.sort();
-    Ok(Inspected { manifest, manifest_text, media, prefix })
+
+    let mut bad_images = Vec::new();
+    let assets_dir = format!("{prefix}assets/");
+    for n in names.iter().filter(|n| n.starts_with(&assets_dir)) {
+        let rel = &n[assets_dir.len()..];
+        if openlina_sdk::assets::is_png(std::path::Path::new(rel)) {
+            if let Some(why) = openlina_sdk::assets::png_problem(&read_file(&mut zip, n)?) {
+                bad_images.push((rel.to_string(), why));
+            }
+        }
+    }
+    Ok(Inspected { manifest, manifest_text, media, prefix, bad_images })
 }
 
 fn read_file(zip: &mut zip::ZipArchive<Cursor<&[u8]>>, name: &str) -> Result<Vec<u8>> {
