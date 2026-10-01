@@ -11,15 +11,15 @@
     # comes from the same release). Bump the tag, `helperHash` below and `nix flake update openlina-kit`
     # together.
     openlina-kit = {
-      url = "github:Proxtx/openlina-kit/v0.1.2";
+      url = "github:Proxtx/openlina-kit/v0.1.3";
       flake = false;
     };
   };
 
   outputs = { self, nixpkgs, rust-overlay, openlina-kit }:
     let
-      kitVersion = "0.1.2";
-      helperHash = "sha256-NHuKr1Pz8gR3dh3TguquLjqbN+cSBEr/QijPJO84Gdw=";
+      kitVersion = "0.1.3";
+      helperHash = "sha256-axNy0oNcPGTBSkQrjGC5+j3yqlWEZ1QdOr2Th+HtMXY=";
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAll = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
 
